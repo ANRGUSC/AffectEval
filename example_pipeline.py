@@ -1,7 +1,7 @@
-from feature_extractor.feature_extractor import FeatureExtractor
-from signal_acquisition.signal_acquisition import SignalAcquisition
-from signal_preprocessor.signal_preprocessor import SignalPreprocessor
-from pipeline.pipeline import Pipeline
+from src.feature_extractor.feature_extractor import FeatureExtractor
+from src.signal_acquisition.signal_acquisition import SignalAcquisition
+from src.signal_preprocessor.signal_preprocessor import SignalPreprocessor
+from src.pipeline.pipeline import Pipeline
 
 
 if __name__ == "__main__":
