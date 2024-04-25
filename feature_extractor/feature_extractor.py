@@ -41,6 +41,18 @@ class FeatureExtractor(BaseFeatureExtractor):
         # Add data to self._features DataFrame accordingly
                 
     def run(self, data):
+        """
+        Parameters
+        --------------------
+        data: dict of {subject_index: pd.DataFrame}
+            Keys correspond to subject indices.
+            Values are pd.DataFrames, where each DataFrame contains columns of the timestamp and processed signals for each subject.
+
+        Returns 
+        --------------------
+        dict of {subject_index: pd.DataFrame}
+            Signal DataFrames in each sublist are resampled, processed separately, and then combined into one DataFrame.
+        """
         for key in list(data.keys()):
             df = data[key]
             signal_types = df.columns[1:]
@@ -54,24 +66,23 @@ class FeatureExtractor(BaseFeatureExtractor):
                     out[feature] = extracted
             out = pd.DataFrame(out)
             self._features[key] = out
-            
         return self._features
     
     def extract_hr(self, signal):
         print("Extracting HR")
-        return signal.iloc[:,- 1]
-
+        return signal.iloc[:, -1]
+    
     def extract_sdnn(self, signal):
         print("Extracting SDNN")
-        return signal.iloc[:,- 1]
+        return signal.iloc[:, -1]
 
     def extract_mean_scl(self, signal):
         print("Extracting mean SCL")
-        return signal.iloc[:,- 1]
+        return signal.iloc[:, -1]
 
     def extract_scr_rate(self, signal):
         print("Extracting SCR rate")
-        return signal.iloc[:,- 1]
+        return signal.iloc[:, -1]
 
     @property
     def name(self):
