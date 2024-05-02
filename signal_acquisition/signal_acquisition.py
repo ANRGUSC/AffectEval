@@ -7,11 +7,10 @@ from .base_signal_acquisition import BaseSignalAcquisition
 
 
 class SignalAcquisition(BaseSignalAcquisition):
-    """
-    
-    """
-    
     def __init__(self, source_folder, signal_types, name=None):
+        """
+        Constructor method
+        """
         if name is None:
             name = "Signal Acquisition"
         self._name = name
@@ -27,8 +26,9 @@ class SignalAcquisition(BaseSignalAcquisition):
 
         Parameters
         --------------------
-        source_folder: str
-            Absolute path to folder containing (possibly) subfolders and .csv aand/or .json files of raw signals.
+        :param source_folder: Absolute path to folder containing (possibly) subfolders and .csv and/or .json files of raw signals.
+        :type source_folder: str
+        :return: A dictionary of lists of pd.DataFrames
         """
         data_files = self._get_data_files(source_folder, signal_types)
         # Need to distinguish between different participants
