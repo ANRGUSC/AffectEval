@@ -14,6 +14,8 @@ class FeatureExtractor(BaseFeatureExtractor):
             name = "Feature Extractor"
         self._name = name
         self._features = {}
+        self._input_type = None
+        self._output_type = np.ndarray
 
         if feature_extraction_methods is not None:
                 self._feature_extraction_methods = feature_extraction_methods
@@ -87,3 +89,11 @@ class FeatureExtractor(BaseFeatureExtractor):
     @property
     def name(self):
         return self._name
+    
+    @property
+    def input_type(self):
+        return self._input_type
+    
+    @property
+    def output_type(self):
+        return self._output_type

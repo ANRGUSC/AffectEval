@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 from sklearn.feature_selection import SequentialFeatureSelector
@@ -26,6 +27,8 @@ class FeatureSelector(BaseFeatureSelector):
         self._model = model
         self._features = features
         self._labels = labels
+        self._input_type = None
+        self._output_type = np.ndarray
 
         if feature_selection_method is not None:
                 self._feature_selection_method = feature_selection_method
@@ -40,3 +43,11 @@ class FeatureSelector(BaseFeatureSelector):
 
     def run(self, features):
         sfs = self._feature_selection_method(self._model, n_features_to_select=self._num_features)
+    
+    @property
+    def input_type(self):
+        return self._input_type
+    
+    @property
+    def output_type(self):
+        return self._output_type

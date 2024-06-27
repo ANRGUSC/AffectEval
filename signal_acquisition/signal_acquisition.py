@@ -7,14 +7,28 @@ from .base_signal_acquisition import BaseSignalAcquisition
 
 
 class SignalAcquisition(BaseSignalAcquisition):
-    def __init__(self, source_folder, signal_types, name=None):
+    def __init__(self, source_folder, signal_types, name=None, labels=None):
         """
         Constructor method
+        Parameters
+        --------------------
+        :param source_folder: Absolute path to folder containing (possibly) subfolders and .csv and/or .json files of raw signals.
+            Must follow the structure described in the ReadME file.
+        :type source_folder: str
+        :param signal_types: List of signal types to read in. Must match signal types listed in signals.py
+        :type signal_type: str
+        :param name: Name of the signal acquisition layer.
+        :type name: str
+        :param labels: Generates labels depending on passed value. Can be 'phase', 'subject', or the absolute path to a .csv file of annotations.
+        :type labels: str
         """
         if name is None:
             name = "Signal Acquisition"
         self._name = name
         self._database = self.read_from_source_folder(source_folder, signal_types)
+        self._input_type = None
+        self._output_type = dict
+        # Implement label generation
 
     def save_to_file(self):
         pass
@@ -27,7 +41,10 @@ class SignalAcquisition(BaseSignalAcquisition):
         Parameters
         --------------------
         :param source_folder: Absolute path to folder containing (possibly) subfolders and .csv and/or .json files of raw signals.
+            Must follow the structure described in the ReadME file.
         :type source_folder: str
+        :param signal_types: List of signal types to read in. Must match signal types listed in signals.py
+        :type signal_type: str
         :return: A dictionary of lists of pd.DataFrames
         """
         data_files = self._get_data_files(source_folder, signal_types)
@@ -88,3 +105,11 @@ class SignalAcquisition(BaseSignalAcquisition):
     @property
     def name(self):
         return self._name
+    
+    @property
+    def input_type(self):
+        return self._input_type
+    
+    @property
+    def output_type(self):
+        return self._output_type

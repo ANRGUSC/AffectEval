@@ -30,6 +30,8 @@ class SignalPreprocessor(BaseSignalPreprocessor):
         if name is None:
             name = "Signal Preprocessor"
         self._name = name
+        self._input_type = None
+        self._output_type = np.ndarray
         
         self._processed_data = {}
         if preprocessing_methods is not None:
@@ -146,3 +148,11 @@ class SignalPreprocessor(BaseSignalPreprocessor):
     @property
     def name(self):
         return self._name
+    
+    @property
+    def input_type(self):
+        return self._input_type
+    
+    @property
+    def output_type(self):
+        return self._output_type
