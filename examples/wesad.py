@@ -3,12 +3,12 @@ import math
 import numpy as np
 import os
 import pandas as pd
-import signals
+import care_for_me.signals as signals
 
-from feature_extractor.feature_extractor import FeatureExtractor
-from signal_acquisition.signal_acquisition import SignalAcquisition
-from signal_preprocessor.signal_preprocessor import SignalPreprocessor
-from pipeline.pipeline import Pipeline
+from care_for_me.feature_extractor.feature_extractor import FeatureExtractor
+from care_for_me.signal_acquisition.signal_acquisition import SignalAcquisition
+from care_for_me.signal_preprocessor.signal_preprocessor import SignalPreprocessor
+from care_for_me.pipeline.pipeline import Pipeline
 
 
 ROOT_DIR = "C:\\Users\\zhoux\\Desktop\\Projects\\CAREforMe"
