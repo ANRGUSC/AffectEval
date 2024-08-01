@@ -7,7 +7,7 @@ from care_for_me.feature_selector.base_feature_selector import BaseFeatureSelect
 
 class FeatureSelector(BaseFeatureSelector):
 
-    def __init__(self, model, features, labels, feature_selection_method=None, num_features=None, name=None):
+    def __init__(self, model, features, labels, feature_selector=None, num_features=None, name=None):
         """
         Constructor
 
@@ -23,6 +23,7 @@ class FeatureSelector(BaseFeatureSelector):
         """
         if name is None:
             name = "Feature Selector"
+
         self._name = name
         self._model = model
         self._features = features
@@ -30,19 +31,25 @@ class FeatureSelector(BaseFeatureSelector):
         self._input_type = None
         self._output_type = np.ndarray
 
-        if feature_selection_method is not None:
-                self._feature_selection_method = feature_selection_method
-        else:
-            # Default feature selection method
-            self._feature_selection_method = SequentialFeatureSelector
-
         if num_features is None:
             num_features = 3
         self._num_features = num_features
+
+        if feature_selector is not None:
+                self._feature_selector = feature_selector
+        else:
+            # Default feature selection method
+            self._feature_selector = SequentialFeatureSelector(self._model, n_features_to_select=self._num_features)
+
         self._selected_features = {}
 
     def run(self, features):
-        sfs = self._feature_selection_method(self._model, n_features_to_select=self._num_features)
+        print(features['10'])
+        sfs = self._feature_selector.fit(features, self._labels)
+    
+    @property
+    def name(self):
+        return self._name
     
     @property
     def input_type(self):

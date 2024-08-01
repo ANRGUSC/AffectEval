@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import time
 
 from pipeline.node import Node
 
@@ -32,4 +33,7 @@ class Pipeline:
         while self._nodes:
             node = self._nodes.pop(0)
             print(f"Running node {node.name}...")
+            start = time.time()
             data = node.run(data)
+            end = time.time()
+            print(f"Elapsed time for {node.name}: {end-start}")

@@ -14,7 +14,7 @@ from care_for_me.signals import Signals
 
 
 def on_connect(self, client, userdata, flags, reason_code, properties):
-        print(f"Connected with result code {reason_code}")
+    print(f"Connected with result code {reason_code}")
 
 
 def on_publish(client, userdata, mid, reason_code, properties):
@@ -22,14 +22,14 @@ def on_publish(client, userdata, mid, reason_code, properties):
 
 
 if __name__ == "__main__":
-    signal_acq_publisher = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="Signal Acq publisher")
+    signal_acq_publisher = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id="Sensor")
     host = "localhost"
     port = 1883
     signal_acq_publisher.on_connect = on_connect
     signal_acq_publisher.on_publish = on_publish
 
     if signal_acq_publisher.connect(host, port, 60) != 0:
-        print("Couldn't connect to the mqtt broker")
+        print("Couldn't connect to the MQTT broker")
         sys.exit(1)
 
     while True:

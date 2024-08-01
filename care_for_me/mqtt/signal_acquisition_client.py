@@ -6,9 +6,21 @@ import random
 from care_for_me.signal_acquisition.signal_acquisition import SignalAcquisition
 
 
+# TODO: Define message template containing timestamp, sensor value, signal type, subject ID, and label (if applicable)
 class SignalAcquisitionClient():
-
-    def __init__(self, signal_types, source_folder=None, host="localhost", port=1883, subscribe_topic="/signal_acq", publish_topic="/signal_preprocessor", client_id="Signal Acq", keepalive=60):
+    """
+    MQTT client that subscribes to a topic streaming sensor data in real time.
+    Collects data over a user-specified period of time (in seconds) before publishing the data packet 
+    for the next client(s) in the system.
+    """
+    def __init__(
+            self, signal_types, packet_duration=10,
+            source_folder=None, 
+            host="localhost", port=1883, 
+            subscribe_topic="/signal_acq", publish_topic="/signal_preprocessor", 
+            client_id="Signal Acq", 
+            keepalive=60
+        ):
         self._mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=client_id)
         self._subscribe_topic = subscribe_topic
         self._publish_topic = publish_topic

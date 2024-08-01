@@ -4,15 +4,17 @@ import random
 
 import biosppy as bp
 import heartpy as hp
+import neurokit2 as nk
 import samplerate
 import scipy
 
 from care_for_me.signal_preprocessor.base_signal_preprocessor import BaseSignalPreprocessor
+from care_for_me import tools
 
 
 class SignalPreprocessor(BaseSignalPreprocessor):
     """
-    A class for preprocessing raw signals.
+    A class for preprocessing raw signals. Handles signal alignment, resampling, and cleaning. 
     """
     
     def __init__(self, preprocessing_methods=None, name=None):
@@ -21,8 +23,8 @@ class SignalPreprocessor(BaseSignalPreprocessor):
         --------------------
         preprocessing_methods: dict
             A dictionary in which keys represent the type of input signal (e.g., BVP, ECG, EDA) and values are 
-            the corresponding preprocessing methods. Signal types must be listed in signals.Signals. Defaults to 
-            the class methods below.
+            the corresponding preprocessing methods. Signal types must be listed in signals.Signals. 
+            Defaults to the class methods provided.
         name: str
             Name of the instantiated object. Defaults to "Signal Preprocessor"
         """
@@ -62,6 +64,10 @@ class SignalPreprocessor(BaseSignalPreprocessor):
                 
     def run(self, data):
         """
+        Infers sampling rates of different signals based on the timestamp column of each signal DataFrame.
+        Performs preprocessing steps, then downsamples signals if necessary to match the lowest sampling rate 
+        present in the collection of signals.
+
         Parameters
         --------------------
         data: dict of {subject_index: list of pd.DataFrames}
@@ -72,14 +78,16 @@ class SignalPreprocessor(BaseSignalPreprocessor):
         --------------------
         dict of {subject_index: pd.DataFrame}
             Signal DataFrames in each sublist are resampled, processed separately, and then combined into one DataFrame.
+            The first column contains the timestamp.
         """
+        
         sampling_rates = []
         # Find lowest sampling rate 
         for key in list(data.keys()):
             data_list = data[key]
             for signal in data_list:
                 # Infer sample rate from timestamp
-                sampling_rates.append(self._get_sampling_rate(signal))
+                sampling_rates.append(tools.get_sampling_rate(signal))
         min_sampling_rate = min(sampling_rates)
         
         for key in list(data.keys()):
@@ -87,28 +95,28 @@ class SignalPreprocessor(BaseSignalPreprocessor):
             processed_df = {}
             for signal in data_list:
                 signal_type = signal.columns[1]
-                sampling_rate = self._get_sampling_rate(signal)
-                resampled_signal = samplerate.resample(signal.iloc[:, -1], min_sampling_rate/sampling_rate) # type: np.ndarray
+                sampling_rate = tools.get_sampling_rate(signal)
+                resampled_signal = samplerate.resample(signal.iloc[:, -1], min_sampling_rate/sampling_rate)  # type: np.ndarray
                 try:
                     method = self._preprocessing_methods[signal_type]
                     processed = method(resampled_signal, min_sampling_rate)
                 except Exception as e:
+                    # print(f"Error processing {signal_type}. Returning resampled signal.")
                     raise(e)
-                    print(f"Error processing {signal_type}. Returning resampled signal.")
                     processed = resampled_signal
                 processed_df[signal_type] = processed
             processed_df = pd.DataFrame(processed_df)
             # Add updated timestamp column
-            timestamp = [min_sampling_rate*i for i in range(processed_df.shape[0])]
+            timestamp = [1/min_sampling_rate*i for i in range(processed_df.shape[0])]
             processed_df.insert(0, "timestamp", timestamp)
             self._processed_data[key] = processed_df
         return self._processed_data
     
-    def align_signals(self, data):
+    def align_signal_start(self, data):
         # May refactor run() so that signals are first aligned and combined into one DataFrame before processing.
         """
-        Align signals given in data. Infers sampling rates of different signals based on the timestamp column of each signal DataFrame.  
-        Downsamples signals if necessary to match the lowest sampling rate present in the collection of signals.
+        Align signals given in data based on starting timestamps. 
+
         Parameters
         --------------------
         data: pd.DataFrame of raw signals 
@@ -116,7 +124,11 @@ class SignalPreprocessor(BaseSignalPreprocessor):
         pass
                 
     def preprocess_ecg(self, signal, sampling_rate):
-        _, filtered_signal, _, _, _, _, _ = bp.signals.ecg.ecg(signal=signal, sampling_rate=sampling_rate, show=False)
+        signal = hp.scale_data(signal)
+        signal = hp.filtering.remove_baseline_wander(signal, sampling_rate)
+        signal, info = nk.ecg_process(signal, sampling_rate=int(sampling_rate))
+        filtered_signal = signal["ECG_Clean"]
+
         return filtered_signal
 
     def preprocess_eda(self, signal, sampling_rate):
@@ -129,17 +141,6 @@ class SignalPreprocessor(BaseSignalPreprocessor):
 
     def add_preprocessing_method(self, signal_type, method):
         self._preprocessing_methods[signal_type] = method
-
-    def _get_sampling_rate(self, signal):
-        try:
-            if type(signal) is pd.DataFrame:
-                timestamp = signal.iloc[:, 0]
-            elif type(signal) is np.ndarray:
-                timestamp = signal[:, 0]
-            delta = timestamp[1] - timestamp[0]
-            return 1/delta
-        except Exception:
-            pass
 
     @property
     def data(self):

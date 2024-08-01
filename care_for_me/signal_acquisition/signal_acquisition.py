@@ -7,6 +7,7 @@ from care_for_me.signal_acquisition.base_signal_acquisition import BaseSignalAcq
 
 
 class SignalAcquisition(BaseSignalAcquisition):
+
     def __init__(self, signal_types, source_folder=None, name=None, labels=None):
         """
         Constructor method
@@ -92,7 +93,8 @@ class SignalAcquisition(BaseSignalAcquisition):
         --------------------
         dict of {subject_index: list of pd.DataFrames}
             Keys correspond to subject indices.
-            Values are lists of pd.DataFrames, where each DataFrame contains the timestamp and data for one signal.
+            Values are lists of pd.DataFrames, where each DataFrame contains the 
+            timestamp, data, and label (if applicable) for one signal.
         """
         return self._database
     

@@ -136,3 +136,7 @@ def reformat_and_save_data():
                 timestamp = [1/700*i for i in range(data.shape[0])]
                 data.insert(0, "timestamp", timestamp)
                 data.to_csv(file_name)
+
+
+def generate_labels():
+    pass

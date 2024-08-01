@@ -4,3 +4,4 @@ from care_for_me import mqtt
 from care_for_me import pipeline
 from care_for_me import signal_acquisition
 from care_for_me import signal_preprocessor
+from care_for_me import tools
