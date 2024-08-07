@@ -44,7 +44,6 @@ class FeatureSelector(BaseFeatureSelector):
         self._selected_features = {}
 
     def run(self, features):
-        print(features['10'])
         sfs = self._feature_selector.fit(features, self._labels)
     
     @property

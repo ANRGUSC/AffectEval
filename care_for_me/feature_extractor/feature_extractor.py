@@ -40,7 +40,7 @@ class FeatureExtractor(BaseFeatureExtractor):
             # Default preprocessing methods
             self._feature_extraction_methods = {
                 "ECG": {"HR": self.extract_hr, "RMSSD": self.extract_rmssd, "SDNN": self.extract_sdnn},
-                "EDA": {"mean_SCL": self.extract_mean_scl, "SCR_rate": self.extract_scr_rate}
+                # "EDA": {"mean_SCL": self.extract_mean_scl, "SCR_rate": self.extract_scr_rate}
             }
 
     def save_to_file(self, file_path):
@@ -63,30 +63,35 @@ class FeatureExtractor(BaseFeatureExtractor):
         """
         Parameters
         --------------------
-        data: dict of {subject_index: pd.DataFrame}
+        data: dict of {subject_index: {signal type: pd.DataFrame}}
             Keys correspond to subject indices.
-            Values are pd.DataFrames, where each DataFrame contains columns of the timestamp and processed signals for each subject.
+            Values are dicts of pd.DataFrames, where each DataFrame contains columns of the timestamp and processed signals for each subject.
 
         Returns 
         --------------------
         dict of {subject_index: pd.DataFrame}
             Signal DataFrames in each sublist are resampled, processed separately, and then combined into one DataFrame.
         """
-        for key in list(data.keys()):
-            df = data[key]
-            signal_types = df.columns[1:]
+        for subject in list(data.keys()):
             out = {}
-            for signal_type in signal_types:
-                signal = df.loc[:, ["timestamp", signal_type]]
-                features = list(self._feature_extraction_methods[signal_type].keys())
-                for feature in features:
-                    method = self._feature_extraction_methods[signal_type][feature]
-                    extracted = method(signal)
-                    out[feature] = extracted
+            for signal_type in data[subject].keys():
+                df = data[subject][signal_type]
+                signal_types = df.columns[1:]
+                for signal_type in signal_types:
+                    if signal_type in list(self._feature_extraction_methods.keys()):
+                        signal = df.loc[:, ["timestamp", signal_type]]
+                        features = list(self._feature_extraction_methods[signal_type].keys())
+                        for feature in features:
+                            method = self._feature_extraction_methods[signal_type][feature]
+                            extracted = method(signal)
+                            out[feature] = extracted
             out = pd.DataFrame(out)
-            print(out.shape)
-            self._features[key] = out
-        return self._features
+            # print(out.head())
+            self._features[subject] = out
+
+        features = pd.concat(self._features.values())
+        features.insert(0, "subject", self._features.keys())
+        return features
     
     def extract_ecg_features_pyhrv(self, signal):
         """
@@ -105,10 +110,9 @@ class FeatureExtractor(BaseFeatureExtractor):
         sdnn = []
 
         start = 0
-        window_size = int(WINDOW_SIZE_ECG*1/fs)
-        overlap = int(OVERLAP_ECG*1/fs)
-        stop = start + WINDOW_SIZE_ECG
-
+        window_size = int(WINDOW_SIZE_ECG*fs)
+        overlap = int(OVERLAP_ECG*fs)
+        stop = start + window_size
         if stop >= n:
             t, filtered_signal, rpeaks, _, _, _, bpm = bp.signals.ecg.ecg(signal=signal, sampling_rate=fs, show=False)
             bpm = np.mean(bpm)
@@ -122,7 +126,6 @@ class FeatureExtractor(BaseFeatureExtractor):
             while stop < n:
                 stop = start + window_size
                 segment = signal[start:stop]
-                print(segment.shape)
                 segment, info = nk.ecg_process(segment, sampling_rate=fs)
                 segment = segment["ECG_Clean"]
                 t, filtered_signal, rpeaks, _, _, _, bpm = bp.signals.ecg.ecg(signal=segment, sampling_rate=fs, show=False)
@@ -138,7 +141,6 @@ class FeatureExtractor(BaseFeatureExtractor):
                     bpm = np.nan
                     rmssd_segment = np.nan
                     sdnn_segment = np.nan
-
                 hr.append(bpm)
                 rmssd.append(rmssd_segment)
                 sdnn.append(sdnn_segment)

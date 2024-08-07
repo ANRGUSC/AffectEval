@@ -17,7 +17,7 @@ class SignalPreprocessor(BaseSignalPreprocessor):
     A class for preprocessing raw signals. Handles signal alignment, resampling, and cleaning. 
     """
     
-    def __init__(self, preprocessing_methods=None, name=None):
+    def __init__(self, preprocessing_methods=None, name=None, skip=True, resample_rate=None):
         """
         Parameters
         --------------------
@@ -27,6 +27,13 @@ class SignalPreprocessor(BaseSignalPreprocessor):
             Defaults to the class methods provided.
         name: str
             Name of the instantiated object. Defaults to "Signal Preprocessor"
+        skip: bool
+            Flag to skip the default signal preprocessing. Defaults to True (default feature extractor methods also perform preprocessing)
+            If preprocessing is skipped, signals are still downsampled if necessary to match the lowest sampling rate 
+            present in the collection of signals 
+        resample_rate: int
+            New sampling rate to resample all signals to. Defaults to the lowest sampling rate present in the collection of signals. 
+            If the passed value for resample_rate is higher than the lowest sampling rate, the lowest sampling rate will be used instead.
         """
 
         if name is None:
@@ -34,6 +41,8 @@ class SignalPreprocessor(BaseSignalPreprocessor):
         self._name = name
         self._input_type = None
         self._output_type = np.ndarray
+        self._skip = skip
+        self._resample_rate = resample_rate
         
         self._processed_data = {}
         if preprocessing_methods is not None:
@@ -76,11 +85,9 @@ class SignalPreprocessor(BaseSignalPreprocessor):
 
         Returns 
         --------------------
-        dict of {subject_index: pd.DataFrame}
-            Signal DataFrames in each sublist are resampled, processed separately, and then combined into one DataFrame.
-            The first column contains the timestamp.
+        dict of {subject_index: {signal type: pd.DataFrame}}
+            Signal DataFrames in each sublist are resampled and processed separately.
         """
-        
         sampling_rates = []
         # Find lowest sampling rate 
         for key in list(data.keys()):
@@ -88,28 +95,33 @@ class SignalPreprocessor(BaseSignalPreprocessor):
             for signal in data_list:
                 # Infer sample rate from timestamp
                 sampling_rates.append(tools.get_sampling_rate(signal))
+        sampling_rates.append(self._resample_rate)
         min_sampling_rate = min(sampling_rates)
         
         for key in list(data.keys()):
             data_list = data[key]
-            processed_df = {}
+            self._processed_data[key] = {}
             for signal in data_list:
                 signal_type = signal.columns[1]
                 sampling_rate = tools.get_sampling_rate(signal)
-                resampled_signal = samplerate.resample(signal.iloc[:, -1], min_sampling_rate/sampling_rate)  # type: np.ndarray
-                try:
-                    method = self._preprocessing_methods[signal_type]
-                    processed = method(resampled_signal, min_sampling_rate)
-                except Exception as e:
-                    # print(f"Error processing {signal_type}. Returning resampled signal.")
-                    raise(e)
-                    processed = resampled_signal
-                processed_df[signal_type] = processed
-            processed_df = pd.DataFrame(processed_df)
+                temp = samplerate.resample(signal.iloc[:, -1], min_sampling_rate/sampling_rate)  # type: np.ndarray
+                temp = pd.DataFrame(data=temp, columns=[signal_type])
+                if not self.skip:
+                    try:
+                        method = self._preprocessing_methods[signal_type]
+                        temp = method(temp, min_sampling_rate)
+                        if type(temp) is pd.Series:    # Necessary because some preprocessing methods convert the np.ndarray to pd.Series
+                            temp = temp.to_frame()
+                            temp.columns = [signal_type]
+                        else:
+                            temp = pd.DataFrame(data=temp, columns=[signal_type])
+                    except Exception as e:
+                        print(f"Error processing {signal_type}. Returning resampled signal.")
+                # Add updated timestamp column
+                timestamp = [1/min_sampling_rate*i for i in range(temp.shape[0])]
+                temp.insert(0, "timestamp", timestamp)
+                self._processed_data[key][signal_type] = temp
             # Add updated timestamp column
-            timestamp = [1/min_sampling_rate*i for i in range(processed_df.shape[0])]
-            processed_df.insert(0, "timestamp", timestamp)
-            self._processed_data[key] = processed_df
         return self._processed_data
     
     def align_signal_start(self, data):
@@ -157,3 +169,7 @@ class SignalPreprocessor(BaseSignalPreprocessor):
     @property
     def output_type(self):
         return self._output_type
+    
+    @property
+    def skip(self):
+        return self._skip
