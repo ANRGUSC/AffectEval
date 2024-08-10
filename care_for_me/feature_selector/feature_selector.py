@@ -7,7 +7,7 @@ from care_for_me.feature_selector.base_feature_selector import BaseFeatureSelect
 
 class FeatureSelector(BaseFeatureSelector):
 
-    def __init__(self, model, features, labels, feature_selector=None, num_features=None, name=None):
+    def __init__(self, model, features, labels, name=None, feature_selector=None, num_features=None, mask_subject=True):
         """
         Constructor
 
@@ -19,7 +19,13 @@ class FeatureSelector(BaseFeatureSelector):
         :param features: Features on which to perform feature selection
         :type features: 
 
-        :param labels: Labels 
+        :param labels: Data labels
+
+        :param name: Name of the instantiated object. Defaults to "Feature Selector"
+        :type name: str
+
+        :param feature_selector: Feature selection method to use. 
+        :type feature_selector: 
         """
         if name is None:
             name = "Feature Selector"
@@ -28,6 +34,7 @@ class FeatureSelector(BaseFeatureSelector):
         self._model = model
         self._features = features
         self._labels = labels
+        self._mask_subject = mask_subject
         self._input_type = None
         self._output_type = np.ndarray
 
@@ -45,6 +52,7 @@ class FeatureSelector(BaseFeatureSelector):
 
     def run(self, features):
         sfs = self._feature_selector.fit(features, self._labels)
+        print(sfs.get_feature_names_out())
     
     @property
     def name(self):
