@@ -138,5 +138,73 @@ def reformat_and_save_data():
                 data.to_csv(file_name)
 
 
-def generate_labels():
-    pass
+def get_self_reports(phases, index, type):
+    file = os.path.join(WESAD_PATH, f"S{index}", f"S{index}_quest.csv")
+    df = pd.read_csv(file, sep=";", header=None, index_col=0).dropna(how="all")
+    data = df.loc[f"# {type}", :].dropna(how="all", axis=1).transpose()
+    columns = df.loc[f"# ORDER", :].dropna(how="all").tolist()[0:5]
+
+    data = data.set_axis(columns, axis=1)
+    data = data.rename(columns={"Medi 1": "Medi_1", "Medi 2": "Medi_2"})
+    data = data.reindex(labels=Phases.PHASES_ORDERED, axis=1)
+    
+    for col in data.columns:
+        if col not in phases:
+            data = data.drop(labels=col, axis=1)
+
+    return data
+
+
+def get_stai_scores(phases):
+    self_report_type = "STAI"
+    # phases = Phases.PHASE_ORDER
+    columns = [f"{phase}_STAI" for phase in phases]
+    subjects = SUBJECTS
+
+    stai_scores = []
+
+    for s in subjects:
+        stai = get_self_reports(phases, s, self_report_type)
+        stai = stai.astype(int)
+        for i in range(stai.shape[1]):
+            stai.iloc[0, i] = 5 - stai.iloc[0, i]
+            stai.iloc[3, i] = 5 - stai.iloc[3, i]
+            stai.iloc[5, i] = 5 - stai.iloc[5, i]
+        # stai = stai.sum(axis=0)/6*20  # proper scaling
+        stai = stai.sum(axis=0)
+        stai = stai.tolist()
+        stai.insert(0, int(s))
+        stai_scores.append(stai)
+    stai_scores = pd.DataFrame(data=stai_scores, columns=["subject"] + columns)
+    return stai_scores
+
+
+def generate_labels(binary_labels=True, threshold="fixed"):
+    """
+    
+    """
+    phases = Phases.PHASES_ORDERED
+    scores = get_stai_scores(phases)
+
+    y_labels = []
+    for i in range(scores.shape[0]):  # Iterates over subjects
+        if binary_labels:
+            if threshold != "fixed":
+                label_mean = scores.iloc[i, 1:].mean()
+            else:
+                label_mean = 4
+            labels = [scores.iloc[i, 0]]  # subject ID
+            for j in range(1, scores.shape[1]):
+                if scores.iloc[i, j] < label_mean:
+                    labels.append(0)
+                else:
+                    labels.append(1)
+        else:
+            labels = [scores.iloc[i, 0]]  # subject ID
+            for j in range(1, scores.shape[1]):
+                labels.append(scores.iloc[i, j])
+        y_labels.append(labels)
+
+    columns = scores.columns
+    y_labels = pd.DataFrame(data=y_labels, columns=columns)
+    return y_labels
