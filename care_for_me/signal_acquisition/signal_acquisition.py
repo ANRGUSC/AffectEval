@@ -96,7 +96,7 @@ class SignalAcquisition(BaseSignalAcquisition):
             Values are lists of pd.DataFrames, where each DataFrame contains the 
             timestamp, data, and label (if applicable) for one signal.
         """
-        return self._database
+        return [self._database]
     
     def add_to_database(self, data):
         self._database.append(data)

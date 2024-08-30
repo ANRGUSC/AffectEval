@@ -63,15 +63,17 @@ class FeatureExtractor(BaseFeatureExtractor):
         """
         Parameters
         --------------------
-        data: dict of {subject_index: {signal type: pd.DataFrame}}
+        :param data: dict of {subject_index: {signal type: pd.DataFrame}}
             Keys correspond to subject indices.
             Values are dicts of pd.DataFrames, where each DataFrame contains columns of the timestamp and processed signals for each subject.
-
+        :type data: dict
+            
         Returns 
         --------------------
         dict of {subject_index: pd.DataFrame}
             Signal DataFrames in each sublist are resampled, processed separately, and then combined into one DataFrame.
         """
+        data = data[0] 
         for subject in list(data.keys()):
             out = {}
             for signal_type in data[subject].keys():
@@ -91,7 +93,7 @@ class FeatureExtractor(BaseFeatureExtractor):
 
         features = pd.concat(self._features.values())
         features.insert(0, "subject", self._features.keys())
-        return features
+        return [features]
     
     def extract_ecg_features_pyhrv(self, signal):
         """

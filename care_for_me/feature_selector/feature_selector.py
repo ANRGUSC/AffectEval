@@ -7,32 +7,30 @@ from care_for_me.feature_selector.base_feature_selector import BaseFeatureSelect
 
 class FeatureSelector(BaseFeatureSelector):
 
-    def __init__(self, model, features, labels, name=None, feature_selector=None, num_features=None, mask_subject=True):
+    def __init__(self, model, feature_names, labels, name=None, feature_selector=None, num_features=None, mask_subject=True):
         """
-        Constructor
-
         Parameters
         --------------------
         :param model: An unfitted estimator
         :type model: sklearn classifier
 
         :param features: Features on which to perform feature selection
-        :type features: 
+        :type features: pandas.DataFrame
 
         :param labels: Data labels
 
         :param name: Name of the instantiated object. Defaults to "Feature Selector"
         :type name: str
 
-        :param feature_selector: Feature selection method to use. 
-        :type feature_selector: 
+        :param feature_selector: Feature selection method to use. Defaults to 
+        :type feature_selector: Feature selection object
         """
         if name is None:
             name = "Feature Selector"
 
         self._name = name
         self._model = model
-        self._features = features
+        self._feature_names = feature_names
         self._labels = labels
         self._mask_subject = mask_subject
         self._input_type = None
@@ -50,9 +48,19 @@ class FeatureSelector(BaseFeatureSelector):
 
         self._selected_features = {}
 
-    def run(self, features):
+    def run(self, data):
+        """
+        Parameters
+        --------------------
+        Returns 
+        --------------------
+        A list containing a DataFrame of features (training samples), feature names,
+        training data labels, and names of selected features selected
+        """
+        features = data[0]
         sfs = self._feature_selector.fit(features, self._labels)
-        print(sfs.get_feature_names_out())
+        selected = sfs.get_feature_names_out()
+        return [features, self._labels, self._feature_names, selected]
     
     @property
     def name(self):

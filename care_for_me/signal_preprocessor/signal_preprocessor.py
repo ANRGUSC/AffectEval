@@ -21,19 +21,22 @@ class SignalPreprocessor(BaseSignalPreprocessor):
         """
         Parameters
         --------------------
-        preprocessing_methods: dict
-            A dictionary in which keys represent the type of input signal (e.g., BVP, ECG, EDA) and values are 
+        :param preprocessing_methods: A dictionary in which keys represent the type of input signal (e.g., BVP, ECG, EDA) and values are 
             the corresponding preprocessing methods. Signal types must be listed in signals.Signals. 
             Defaults to the class methods provided.
-        name: str
-            Name of the instantiated object. Defaults to "Signal Preprocessor"
-        skip: bool
-            Flag to skip the default signal preprocessing. Defaults to True (default feature extractor methods also perform preprocessing)
+        :type preprocessing_methods: dict
+
+        :param name: Name of the instantiated object. Defaults to "Signal Preprocessor"
+        :type name: str
+
+        :param skip: Flag to skip the default signal preprocessing. Defaults to True (default feature extractor methods also perform the same preprocessing steps)
             If preprocessing is skipped, signals are still downsampled if necessary to match the lowest sampling rate 
             present in the collection of signals 
-        resample_rate: int
-            New sampling rate to resample all signals to. Defaults to the lowest sampling rate present in the collection of signals. 
+        :type skip: bool
+
+        :param resample_rate: New sampling rate to resample all signals to. Defaults to the lowest sampling rate present in the collection of signals. 
             If the passed value for resample_rate is higher than the lowest sampling rate, the lowest sampling rate will be used instead.
+        :type resample_rate: int
         """
 
         if name is None:
@@ -79,15 +82,17 @@ class SignalPreprocessor(BaseSignalPreprocessor):
 
         Parameters
         --------------------
-        data: dict of {subject_index: list of pd.DataFrames}
+        :param data: dict of {subject_index: list of pd.DataFrames}
             Keys correspond to subject indices.
             Values are lists of pd.DataFrames, where each DataFrame contains the timestamp and raw data for one signal.
-
+        :type data: dict
+            
         Returns 
         --------------------
         dict of {subject_index: {signal type: pd.DataFrame}}
             Signal DataFrames in each sublist are resampled and processed separately.
         """
+        data = data[0]
         sampling_rates = []
         # Find lowest sampling rate 
         for key in list(data.keys()):
@@ -122,7 +127,7 @@ class SignalPreprocessor(BaseSignalPreprocessor):
                 temp.insert(0, "timestamp", timestamp)
                 self._processed_data[key][signal_type] = temp
             # Add updated timestamp column
-        return self._processed_data
+        return [self._processed_data]
     
     def align_signal_start(self, data):
         # May refactor run() so that signals are first aligned and combined into one DataFrame before processing.
