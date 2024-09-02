@@ -158,3 +158,43 @@ def reformat_and_save_data():
                     timestamp = [1/fs*i for i in range(data.shape[0])]
                     data["timestamp"] = timestamp
                     data.to_csv(new_file)
+
+
+def get_suds_labels(threshold="fixed"):
+    phases = Phases.PHASES_LIST
+    label_dict = {
+        "Baseline_Rest": "Baseline_SUDS", 
+        "BugBox_Relax": "BugBox_Relax_SUDS",
+        "BugBox_Anticipate": "BugBox_Preparation_SUDS",
+        "BugBox_Exposure": "BugBox_Exposure_SUDS", 
+        "BugBox_Break": "BugBox_Break_SUDS", 
+        "Speech_Relax": "Speech_Relax_SUDS",
+        "Speech_Anticipate": "Speech_SUDS",
+        "Speech_Exposure": "Speech_Exposure_SUDS",
+        "Speech_Break": "Speech_Break_SUDS"
+    }
+    for i in range(len(phases)):
+        phases[i] = label_dict[phases[i]]
+    participant_file = os.path.join(APD_PATH, "participants_details.csv")
+    df = pd.read_csv(participant_file)
+    suds_labels = df.loc[:, ["Participant"] + phases]
+    mean_suds = np.mean(suds_labels.loc[:, phases], axis=1)
+    labels = []
+
+    for i in range(suds_labels.shape[0]):
+        if threshold == "fixed":
+            mean = 50
+        else:
+            mean = mean_suds.iloc[i, :]
+
+        row = suds_labels[phases].iloc[i]
+        zero_idx = row.index[row < mean]
+        one_idx = row.index[row >= mean]
+        row[zero_idx] = 0
+        row[one_idx] = 1
+
+        labels.append(row)
+
+    labels = pd.DataFrame(labels)
+
+    return labels
