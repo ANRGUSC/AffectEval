@@ -69,12 +69,19 @@ class Estimator(BaseEstimator):
         --------------------
         Fitted estimator if mode=0, predicted labels if mode=1.
         """
-        x = data[0]
-        y = data[1]
-        feature_names = data[2]
-        selected_features = data[3]
-        x_selected = x[selected_features]
-
+        if self._mode == 0:    # Training
+            x = data[0]
+            y = data[1]
+            feature_names = data[2]
+            selected_features = data[3]
+            x_selected = x[selected_features]
+            out = self._run_method(x_selected, y)
+        else:    # Testing
+            x = data[0]
+            y = data[1]
+            feature_names = data[2]
+            selected_features = data[3]
+            fitted_estimator = data[4]
         return self._run_method(x_selected, y)
 
     def set_random_seed(self, random_seed):

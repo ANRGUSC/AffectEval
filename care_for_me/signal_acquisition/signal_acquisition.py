@@ -52,7 +52,7 @@ class SignalAcquisition(BaseSignalAcquisition):
         data_files = self._get_data_files(source_folder, signal_types)
         # Need to distinguish between different participants
         data = {}
-        for key in list(data_files.keys()):
+        for key in list(data_files.keys()):    # key = subject index
             data[key] = [self.read_from_file(f) for f in data_files[key]]
         return data
     
@@ -62,19 +62,23 @@ class SignalAcquisition(BaseSignalAcquisition):
         for p in dir_list:
             if os.path.isdir(p):
                 files_p = os.listdir(p)
-                key = files_p[0].split("_")[0]  # Get subject index from file
+                s = files_p[0].split("_")[0]  # Get subject index from file
                 files_p = [os.path.join(p, f) for f in files_p if any(signal in f for signal in signal_types)]
-                files_dict[key] = files_p  # Add list of all files in subdirectory p
+                files_dict[s] = files_p  # Add list of all files in subdirectory p
             else:
-                print(f"Path {p} corresponds to a file, not a subdirectory.")
+                print(f"Path {p} corresponds to a file, expecting a subdirectory.")
         return files_dict
 
     def read_from_file(self, file_path):
         """
+        Reads signals from a CSV or JSON file into a pandas DataFrame. 
         Parameters
         --------------------
         file_path: str
             Absolute path to data file
+        Returns
+        --------------------
+        pd.DataFrame
         """
         file_type = file_path[-3:]
         if file_type not in ["csv", "json"]:
