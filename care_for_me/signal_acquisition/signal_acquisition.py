@@ -10,7 +10,7 @@ class SignalAcquisition(BaseSignalAcquisition):
 
     def __init__(self, signal_types, source_folder=None, name=None, labels=None):
         """
-        Constructor method
+        Constructor method for the signal acquisition layer.
         Parameters
         --------------------
         :param source_folder: Absolute path to folder containing (possibly) subfolders and .csv and/or .json files of raw signals.

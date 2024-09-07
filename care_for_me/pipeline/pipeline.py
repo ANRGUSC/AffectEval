@@ -37,3 +37,4 @@ class Pipeline:
             data = node.run(data)
             end = time.time()
             print(f"Elapsed time for {node.name}: {end-start}")
+        return data

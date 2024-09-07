@@ -19,6 +19,7 @@ class SignalPreprocessor(BaseSignalPreprocessor):
     
     def __init__(self, preprocessing_methods=None, name=None, skip=True, resample_rate=None):
         """
+        Constructor method for the signal preprocessing layer.
         Parameters
         --------------------
         :param preprocessing_methods: A dictionary in which keys represent the type of input signal (e.g., BVP, ECG, EDA) and values are 

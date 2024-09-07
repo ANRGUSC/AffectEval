@@ -27,6 +27,19 @@ OVERLAP_TEMP = 30
 class FeatureExtractor(BaseFeatureExtractor):
 
     def __init__(self, feature_extraction_methods=None, name=None):
+        """
+        Constructor method for the feature extraction layer.
+        Parameters
+        --------------------
+        :param feature_extraction_methods: A dictionary in which keys are feature names (e.g., HR, RMSSD, SDNN) and values are 
+            the corresponding feature extraction methods.
+            Defaults to the class methods provided.
+        :type feature_extraction_methods: dict
+
+        :param name: Name of the instantiated object. Defaults to "Feature Extractor"
+        :type name: str
+
+        """
         if name is None:
             name = "Feature Extractor"
         self._name = name

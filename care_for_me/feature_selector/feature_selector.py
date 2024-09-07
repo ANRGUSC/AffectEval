@@ -9,6 +9,7 @@ class FeatureSelector(BaseFeatureSelector):
 
     def __init__(self, model, feature_names, labels, name=None, feature_selector=None, num_features=None, mask_subject=True):
         """
+        Constructor method for the feature selection layer.
         Parameters
         --------------------
         :param model: An unfitted estimator
@@ -22,7 +23,8 @@ class FeatureSelector(BaseFeatureSelector):
         :param name: Name of the instantiated object. Defaults to "Feature Selector"
         :type name: str
 
-        :param feature_selector: Feature selection method to use. Defaults to 
+        :param feature_selector: Feature selection object to use; must have fit() and get_feature_names_out() defined. 
+            Defaults to sklearn's SequentialFeatureSelector
         :type feature_selector: Feature selection object
         """
         if name is None:

@@ -130,7 +130,7 @@ class Groups:
         '14', '21', '23', '25', '34', '39', '43', '46', '51', '57', '71', '72', '77', '78', '79', '80', '82', '83', '84', '85', '87', '88', '89', '91', '92', '93'
     ]
 
-    SUBJECTS = ha_participant_indices + la_participant_indices
+SUBJECTS = Groups.ha_participant_indices + Groups.la_participant_indices
 
 
 class Responses:
@@ -142,7 +142,7 @@ class Responses:
 
 
 def reformat_and_save_data():
-    for subject in Groups.SUBJECTS:
+    for subject in SUBJECTS:
         folder = os.path.join(APD_PATH, "formatted", f"{subject}")
         print(f"Saving data for subject {subject}...")
         for task in Tasks.TASKS.keys():
