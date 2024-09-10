@@ -53,7 +53,14 @@ class SignalAcquisition(BaseSignalAcquisition):
         # Need to distinguish between different participants
         data = {}
         for key in list(data_files.keys()):    # key = subject index
-            data[key] = [self.read_from_file(f) for f in data_files[key]]
+            data[key] = []
+            phases = set([f.split("_")[1] for f in data_files[key]])
+            for phase in phases:
+                sublist = [f for f in data_files[key] if phase in f]
+                for f in sublist:
+                    df = self.read_from_file(f)
+                    df.insert(1, "Phase", phase)
+                    data[key].append(df)
         return data
     
     def _get_data_files(self, source_folder, signal_types):

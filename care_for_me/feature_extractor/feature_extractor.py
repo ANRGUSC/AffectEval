@@ -89,23 +89,23 @@ class FeatureExtractor(BaseFeatureExtractor):
         data = data[0] 
         for subject in list(data.keys()):
             out = {}
-            for signal_type in data[subject].keys():
-                df = data[subject][signal_type]
-                signal_types = df.columns[1:]
+            for df in data[subject]:
+                signal_types = df.columns[2:]
                 for signal_type in signal_types:
                     if signal_type in list(self._feature_extraction_methods.keys()):
                         signal = df.loc[:, ["timestamp", signal_type]]
+                        print(signal.shape)
                         features = list(self._feature_extraction_methods[signal_type].keys())
                         for feature in features:
                             method = self._feature_extraction_methods[signal_type][feature]
                             extracted = method(signal)
                             out[feature] = extracted
             out = pd.DataFrame(out)
-            # print(out.head())
             self._features[subject] = out
 
         features = pd.concat(self._features.values())
         features.insert(0, "subject", self._features.keys())
+        print(features)
         return [features]
     
     def extract_ecg_features_pyhrv(self, signal):

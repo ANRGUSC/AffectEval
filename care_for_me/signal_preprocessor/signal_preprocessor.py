@@ -96,19 +96,20 @@ class SignalPreprocessor(BaseSignalPreprocessor):
         data = data[0]
         sampling_rates = []
         # Find lowest sampling rate 
-        for key in list(data.keys()):
-            data_list = data[key]
+        for subject in list(data.keys()):
+            data_list = data[subject]
             for signal in data_list:
                 # Infer sample rate from timestamp
                 sampling_rates.append(tools.get_sampling_rate(signal))
         sampling_rates.append(self._resample_rate)
         min_sampling_rate = min(sampling_rates)
         
-        for key in list(data.keys()):
-            data_list = data[key]
-            self._processed_data[key] = {}
+        for subject in list(data.keys()):
+            data_list = data[subject]
+            self._processed_data[subject] = []
             for signal in data_list:
-                signal_type = signal.columns[1]
+                phase = signal["Phase"].iloc[0]
+                signal_type = signal.columns[2]
                 sampling_rate = tools.get_sampling_rate(signal)
                 temp = samplerate.resample(signal.iloc[:, -1], min_sampling_rate/sampling_rate)  # type: np.ndarray
                 temp = pd.DataFrame(data=temp, columns=[signal_type])
@@ -124,9 +125,11 @@ class SignalPreprocessor(BaseSignalPreprocessor):
                     except Exception as e:
                         print(f"Error processing {signal_type}. Returning resampled signal.")
                 # Add updated timestamp column
-                timestamp = [1/min_sampling_rate*i for i in range(temp.shape[0])]
+                # TODO: Fix timestamp generation. This sets the timestamp of the first sample to 0, which isn't necessarily what we want. 
+                timestamp = [1/min_sampling_rate*i for i in range(temp.shape[0])]    
                 temp.insert(0, "timestamp", timestamp)
-                self._processed_data[key][signal_type] = temp
+                temp.insert(1, "Phase", phase)
+                self._processed_data[subject].append(temp)
             # Add updated timestamp column
         return [self._processed_data]
     
