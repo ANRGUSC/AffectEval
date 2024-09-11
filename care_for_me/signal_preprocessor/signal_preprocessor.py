@@ -90,7 +90,7 @@ class SignalPreprocessor(BaseSignalPreprocessor):
             
         Returns 
         --------------------
-        dict of {subject_index: {signal type: pd.DataFrame}}
+        dict of {subject_index: [pd.DataFrame]}
             Signal DataFrames in each sublist are resampled and processed separately.
         """
         data = data[0]
@@ -130,7 +130,12 @@ class SignalPreprocessor(BaseSignalPreprocessor):
                 temp.insert(0, "timestamp", timestamp)
                 temp.insert(1, "Phase", phase)
                 self._processed_data[subject].append(temp)
-            # Add updated timestamp column
+        
+        # Merge dataframes for each subject
+        for subject in self._processed_data.keys():
+            dfs = self._processed_data[subject]
+            
+
         return [self._processed_data]
     
     def align_signal_start(self, data):

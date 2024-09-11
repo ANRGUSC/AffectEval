@@ -5,9 +5,10 @@ from sklearn.feature_selection import SequentialFeatureSelector
 from care_for_me.feature_selector.base_feature_selector import BaseFeatureSelector
 
 
+# TODO: Add parameter to control whether or not to use subject ID as a feature.
 class FeatureSelector(BaseFeatureSelector):
 
-    def __init__(self, model, feature_names, labels, name=None, feature_selector=None, num_features=None, mask_subject=True):
+    def __init__(self, model, feature_names, labels, name=None, feature_selector=None, num_features=None, mask_subject=True, verbose=True):
         """
         Constructor method for the feature selection layer.
         Parameters
@@ -47,6 +48,7 @@ class FeatureSelector(BaseFeatureSelector):
         else:
             # Default feature selection method
             self._feature_selector = SequentialFeatureSelector(self._model, n_features_to_select=self._num_features)
+        self._verbose = verbose
 
         self._selected_features = {}
 
@@ -56,10 +58,18 @@ class FeatureSelector(BaseFeatureSelector):
         --------------------
         Returns 
         --------------------
-        A list containing a DataFrame of features (training samples), feature names,
-        training data labels, and names of selected features selected
+        A list containing a DataFrame of features (training samples), feature names, training data labels, and names of selected features
+        One-hot encoding is performed on categorical features.
         """
         features = data[0]
+        # One-hot encoding if necessary
+        # *Q*: Subject IDs are currently treated as numerical features -- change to categorical features?
+        col_types = features.dtypes
+        print(features)
+        if col_types["subject"] == object:
+            features["subject"] = pd.to_numeric(features["subject"])
+        features = pd.get_dummies(features)
+        print(features)
         sfs = self._feature_selector.fit(features, self._labels)
         selected = sfs.get_feature_names_out()
         return [features, self._labels, self._feature_names, selected]

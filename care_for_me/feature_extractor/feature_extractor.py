@@ -43,7 +43,7 @@ class FeatureExtractor(BaseFeatureExtractor):
         if name is None:
             name = "Feature Extractor"
         self._name = name
-        self._features = {}
+        self._features = []
         self._input_type = None
         self._output_type = np.ndarray
 
@@ -53,7 +53,7 @@ class FeatureExtractor(BaseFeatureExtractor):
             # Default preprocessing methods
             self._feature_extraction_methods = {
                 "ECG": {"HR": self.extract_hr, "RMSSD": self.extract_rmssd, "SDNN": self.extract_sdnn},
-                # "EDA": {"mean_SCL": self.extract_mean_scl, "SCR_rate": self.extract_scr_rate}
+                "EDA": {"mean_SCL": self.extract_mean_scl, "SCR_rate": self.extract_scr_rate}
             }
 
     def save_to_file(self, file_path):
@@ -76,7 +76,7 @@ class FeatureExtractor(BaseFeatureExtractor):
         """
         Parameters
         --------------------
-        :param data: dict of {subject_index: {signal type: pd.DataFrame}}
+        :param data: dict of {subject_index: [pd.DataFrame]}
             Keys correspond to subject indices.
             Values are dicts of pd.DataFrames, where each DataFrame contains columns of the timestamp and processed signals for each subject.
         :type data: dict
@@ -88,23 +88,25 @@ class FeatureExtractor(BaseFeatureExtractor):
         """
         data = data[0] 
         for subject in list(data.keys()):
-            out = {}
             for df in data[subject]:
+                row = {"subject": subject, "Phase": [df["Phase"][0]]}
                 signal_types = df.columns[2:]
+                extracted = {}
                 for signal_type in signal_types:
                     if signal_type in list(self._feature_extraction_methods.keys()):
                         signal = df.loc[:, ["timestamp", signal_type]]
-                        print(signal.shape)
                         features = list(self._feature_extraction_methods[signal_type].keys())
                         for feature in features:
                             method = self._feature_extraction_methods[signal_type][feature]
-                            extracted = method(signal)
-                            out[feature] = extracted
-            out = pd.DataFrame(out)
-            self._features[subject] = out
-
-        features = pd.concat(self._features.values())
-        features.insert(0, "subject", self._features.keys())
+                            feat = method(signal)
+                            extracted[feature] = feat
+                    row.update(extracted)
+                row = pd.DataFrame(row)
+                self._features.append(row)
+        features = pd.concat(self._features)
+        col = features.pop("Phase")
+        features.insert(1, col.name, col)
+        features = features.reset_index(drop=True)
         print(features)
         return [features]
     
@@ -199,8 +201,8 @@ class FeatureExtractor(BaseFeatureExtractor):
     
     def extract_mean_scl(self, signal):
         fs = tools.get_sampling_rate(signal)
-        window_size = int(WINDOW_SIZE_EDA*1/fs)
-        overlap = int(OVERLAP_EDA*1/fs)
+        window_size = int(WINDOW_SIZE_EDA*fs)
+        overlap = int(OVERLAP_EDA*fs)
 
         tonic, _ = self.extract_eda_features_nk(signal)
 
@@ -222,13 +224,13 @@ class FeatureExtractor(BaseFeatureExtractor):
             segment_mean = np.mean(segment)
             out.append(segment_mean)
             start = stop - overlap
-        mean_scl = np.asarray(out)
+        mean_scl = list(out)
         return mean_scl
 
     def extract_scr_rate(self, signal):
         fs = tools.get_sampling_rate(signal)
-        window_size = int(WINDOW_SIZE_EDA*1/fs)
-        overlap = int(OVERLAP_EDA*1/fs)
+        window_size = int(WINDOW_SIZE_EDA*fs)
+        overlap = int(OVERLAP_EDA*fs)
 
         _, peaks = self.extract_eda_features_nk(signal)
 
@@ -250,7 +252,7 @@ class FeatureExtractor(BaseFeatureExtractor):
             num_peaks = sum(segment)
             out.append(num_peaks)
             start = stop - overlap
-        scr_rate = np.asarray(out)
+        scr_rate = list(out)
         return scr_rate
 
     @property
