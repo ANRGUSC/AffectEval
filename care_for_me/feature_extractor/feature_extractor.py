@@ -88,10 +88,10 @@ class FeatureExtractor(BaseFeatureExtractor):
         """
         data = data[0] 
         for subject in list(data.keys()):
+            extracted = {"Phase": []}
             for df in data[subject]:
-                row = {"subject": subject, "Phase": [df["Phase"][0]]}
+                extracted["Phase"].append(df["Phase"][0])
                 signal_types = df.columns[2:]
-                extracted = {}
                 for signal_type in signal_types:
                     if signal_type in list(self._feature_extraction_methods.keys()):
                         signal = df.loc[:, ["timestamp", signal_type]]
@@ -99,10 +99,16 @@ class FeatureExtractor(BaseFeatureExtractor):
                         for feature in features:
                             method = self._feature_extraction_methods[signal_type][feature]
                             feat = method(signal)
-                            extracted[feature] = feat
-                    row.update(extracted)
-                row = pd.DataFrame(row)
-                self._features.append(row)
+                            if feature in extracted.keys():
+                                extracted[feature].append(feat)
+                            else:
+                                extracted[feature] = [feat]
+            for col in extracted.keys():
+                print(len(extracted[col]))
+                print(extracted[col])
+            extracted = pd.DataFrame(extracted)
+            extracted.insert(0, "subject", subject)
+            self._features.append(extracted)
         features = pd.concat(self._features)
         col = features.pop("Phase")
         features.insert(1, col.name, col)

@@ -86,6 +86,8 @@ class SignalPreprocessor(BaseSignalPreprocessor):
         :param data: dict of {subject_index: list of pd.DataFrames}
             Keys correspond to subject indices.
             Values are lists of pd.DataFrames, where each DataFrame contains the timestamp and raw data for one signal.
+            # NOTE: We definitely want to keep signals in separate DataFrames in case we maintain different sampling rates for each signal.
+        
         :type data: dict
             
         Returns 
@@ -134,7 +136,7 @@ class SignalPreprocessor(BaseSignalPreprocessor):
         # Merge dataframes for each subject
         for subject in self._processed_data.keys():
             dfs = self._processed_data[subject]
-            
+
 
         return [self._processed_data]
     
