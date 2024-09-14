@@ -200,6 +200,12 @@ def generate_labels(binary_labels=True, threshold="fixed"):
                 labels.append(scores.iloc[i, j])
         y_labels.append(labels)
 
-    columns = scores.columns
+    columns = list(scores.columns)
+    i = columns.index("Medi_1_STAI")
+    columns[i] = "Medi1"
+    i = columns.index("Medi_2_STAI")
+    columns[i] = "Medi2"
+
+    columns = [c.split("_")[0] for c in columns]
     y_labels = pd.DataFrame(data=y_labels, columns=columns)
     return y_labels

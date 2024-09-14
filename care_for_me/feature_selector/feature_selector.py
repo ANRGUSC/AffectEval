@@ -65,11 +65,9 @@ class FeatureSelector(BaseFeatureSelector):
         # One-hot encoding if necessary
         # *Q*: Subject IDs are currently treated as numerical features -- change to categorical features?
         col_types = features.dtypes
-        print(features)
         if col_types["subject"] == object:
             features["subject"] = pd.to_numeric(features["subject"])
         features = pd.get_dummies(features)
-        print(features)
         sfs = self._feature_selector.fit(features, self._labels)
         selected = sfs.get_feature_names_out()
         return [features, self._labels, self._feature_names, selected]

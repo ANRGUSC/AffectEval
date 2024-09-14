@@ -6,7 +6,9 @@ import heartpy as hp
 import neurokit2 as nk
 import pyhrv.time_domain as td
 import scipy
+import statistics
 
+from tqdm import tqdm
 from care_for_me.feature_extractor.base_feature_extractor import BaseFeatureExtractor
 from care_for_me import tools
 
@@ -58,7 +60,8 @@ class FeatureExtractor(BaseFeatureExtractor):
 
     def save_to_file(self, file_path):
         pass
-
+    
+    # Unfinished
     def read_from_file(file_path):
         file_type = file_path[-3:]
         if file_type not in ["csv", "json"]:
@@ -87,10 +90,12 @@ class FeatureExtractor(BaseFeatureExtractor):
             Signal DataFrames in each sublist are resampled, processed separately, and then combined into one DataFrame.
         """
         data = data[0] 
-        for subject in list(data.keys()):
+        for subject in tqdm(list(data.keys())):
             extracted = {"Phase": []}
             for df in data[subject]:
-                extracted["Phase"].append(df["Phase"][0])
+                phase = df["Phase"][0]
+                if phase not in extracted["Phase"]:
+                    extracted["Phase"].append(phase)
                 signal_types = df.columns[2:]
                 for signal_type in signal_types:
                     if signal_type in list(self._feature_extraction_methods.keys()):
@@ -100,12 +105,9 @@ class FeatureExtractor(BaseFeatureExtractor):
                             method = self._feature_extraction_methods[signal_type][feature]
                             feat = method(signal)
                             if feature in extracted.keys():
-                                extracted[feature].append(feat)
+                                extracted[feature].append(statistics.mean(feat))
                             else:
-                                extracted[feature] = [feat]
-            for col in extracted.keys():
-                print(len(extracted[col]))
-                print(extracted[col])
+                                extracted[feature] = [statistics.mean(feat)]
             extracted = pd.DataFrame(extracted)
             extracted.insert(0, "subject", subject)
             self._features.append(extracted)
@@ -113,7 +115,6 @@ class FeatureExtractor(BaseFeatureExtractor):
         col = features.pop("Phase")
         features.insert(1, col.name, col)
         features = features.reset_index(drop=True)
-        print(features)
         return [features]
     
     def extract_ecg_features_pyhrv(self, signal):
