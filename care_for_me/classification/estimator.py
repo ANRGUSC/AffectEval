@@ -10,7 +10,11 @@ from sklearn.utils.validation import check_is_fitted
 
 class Estimator(BaseEstimator):
 
-    def __init__(self, labels, mode, model=None, cv=None, name="Estimator", run_method=None, verbose=True):
+    def __init__(
+            self, mode, labels, label_generator_method,
+            model=None, cv=None, name="Estimator", 
+            run_method=None, verbose=True
+        ):
         """
         Constructor method for the classification layer.
         Parameters
@@ -18,11 +22,13 @@ class Estimator(BaseEstimator):
         :param model: An unfitted estimator. Defaults to sklearn's SVC
         :type model: sklearn classifier
 
-        :param x: Features on which to perform feature selection
-        :type x: pandas.DataFrame
+        :param labels: Labels OR path to file containing labels.
+        :type labels: pandas.DataFrame OR string (file path)
 
-        :param y: Data labels
-        :type y: pandas.DataFrame
+        :param label_generator_method: Specifier for the type of label to generate. 
+
+        :type label_generator_method: str (for default methods, can be "subject", "phase")
+            callable (for custom label generation from a file specified by the labels parameter)
 
         :param mode: Integer indicating what mode to run the estimator.
             0 - Train only
@@ -38,8 +44,15 @@ class Estimator(BaseEstimator):
             name = "Estimator"
 
         self._name = name
-        self._labels = labels
         self._mode = mode
+
+        if type(labels) is pd.DataFrame:
+            self._labels = labels
+        else:
+            if type(label_generator_method) is str:
+                self.label_generator_method = self.read_labels
+            else:
+                self._label_generator_method = label_generator_method
 
         if model is not None:
             self._model = model
@@ -63,6 +76,9 @@ class Estimator(BaseEstimator):
         self._run_method = run_method
 
         self._random_seed = None
+
+    def read_labels(self, labels):
+        pass
 
     def run(self, data):
         """

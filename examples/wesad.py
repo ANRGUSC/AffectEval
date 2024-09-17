@@ -6,11 +6,6 @@ import pandas as pd
 import care_for_me.signals as signals
 
 
-ROOT_DIR = "C:\\Users\\zhoux\\Desktop\\Projects\\CAREforMe"
-DATA_DIR = os.path.join(ROOT_DIR, "data")
-WESAD_PATH = os.path.join(DATA_DIR, "WESAD")
-METRICS = os.path.join(DATA_DIR, "metrics", "WESAD")
-
 subject_indices = list(range(2, 12)) + list(range(13, 18))
 SUBJECTS = [str(i) for i in subject_indices]
 
@@ -117,9 +112,13 @@ def get_participant_signals(participant_idx):
     return data
 
 
-def reformat_and_save_data():
+def reformat_and_save_data(wesad_path):
+    """
+    Refactors the WESAD dataset into a format accepted by the CAREforMe pipeline. Refer to documentation to see
+    specific folder structure.
+    """
     for subject in SUBJECTS:
-        folder = os.path.join(WESAD_PATH, "formatted", f"{subject}")
+        folder = os.path.join(wesad_path, "formatted", f"{subject}")
         print(f"Saving data for subject {subject}...")
         for phase in Phases.PHASES_ORDERED:
             print(f"Phase {phase}")
@@ -133,8 +132,8 @@ def reformat_and_save_data():
                 data.to_csv(file_name)
 
 
-def get_self_reports(phases, index, type):
-    file = os.path.join(WESAD_PATH, f"S{index}", f"S{index}_quest.csv")
+def get_self_reports(wesad_path, phases, index, type):
+    file = os.path.join(wesad_path, f"S{index}", f"S{index}_quest.csv")
     df = pd.read_csv(file, sep=";", header=None, index_col=0).dropna(how="all")
     data = df.loc[f"# {type}", :].dropna(how="all", axis=1).transpose()
     columns = df.loc[f"# ORDER", :].dropna(how="all").tolist()[0:5]
@@ -150,7 +149,7 @@ def get_self_reports(phases, index, type):
     return data
 
 
-def get_stai_scores(phases):
+def get_stai_scores(wesad_path, phases):
     self_report_type = "STAI"
     # phases = Phases.PHASE_ORDER
     columns = [f"{phase}_STAI" for phase in phases]
@@ -159,7 +158,7 @@ def get_stai_scores(phases):
     stai_scores = []
 
     for s in subjects:
-        stai = get_self_reports(phases, s, self_report_type)
+        stai = get_self_reports(wesad_path, phases, s, self_report_type)
         stai = stai.astype(int)
         for i in range(stai.shape[1]):
             stai.iloc[0, i] = 5 - stai.iloc[0, i]
@@ -174,12 +173,12 @@ def get_stai_scores(phases):
     return stai_scores
 
 
-def generate_labels(binary_labels=True, threshold="fixed"):
+def generate_labels(wesad_path, binary_labels=True, threshold="fixed"):
     """
     
     """
     phases = Phases.PHASES_ORDERED
-    scores = get_stai_scores(phases)
+    scores = get_stai_scores(wesad_path, phases)
 
     y_labels = []
     for i in range(scores.shape[0]):  # Iterates over subjects
@@ -190,10 +189,8 @@ def generate_labels(binary_labels=True, threshold="fixed"):
                 label_mean = 4
             labels = [scores.iloc[i, 0]]  # subject ID
             for j in range(1, scores.shape[1]):
-                if scores.iloc[i, j] < label_mean:
-                    labels.append(0)
-                else:
-                    labels.append(1)
+                label = 0 if scores.iloc[i, j] < label_mean else 1
+                labels.append(label)
         else:
             labels = [scores.iloc[i, 0]]  # subject ID
             for j in range(1, scores.shape[1]):

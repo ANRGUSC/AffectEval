@@ -38,7 +38,7 @@ class FeatureExtractor(BaseFeatureExtractor):
             Defaults to the class methods provided.
         :type feature_extraction_methods: dict
 
-        :param name: Name of the instantiated object. Defaults to "Feature Extractor"
+        :param name: Name of the instantiated object. Defaults to "Feature Extractor".
         :type name: str
 
         """
