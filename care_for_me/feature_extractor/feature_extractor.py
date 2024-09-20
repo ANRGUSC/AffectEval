@@ -94,7 +94,7 @@ class FeatureExtractor(BaseFeatureExtractor):
             extracted = {"Phase": []}
             for df in data[subject]:
                 phase = df["Phase"][0]
-                if phase not in extracted["Phase"]:
+                if phase not in extracted["Phase"]:    # Add phase name as dictionary key if not already in dict
                     extracted["Phase"].append(phase)
                 signal_types = df.columns[2:]
                 for signal_type in signal_types:
