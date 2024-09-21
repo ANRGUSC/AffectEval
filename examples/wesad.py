@@ -46,8 +46,8 @@ WESAD_chest_modalities = [
 ]
 
 
-def get_participant_data(participant_idx):
-    file = os.path.join(WESAD_PATH, f"S{participant_idx}", f"S{participant_idx}.pkl")
+def get_participant_data(wesad_path, participant_idx):
+    file = os.path.join(wesad_path, f"S{participant_idx}", f"S{participant_idx}.pkl")
     data = pd.read_pickle(file)
     return data
 
@@ -61,8 +61,8 @@ def get_modality(participant_idx, location, modality):
     return data[modality]
 
 
-def get_time_intervals(participant_idx, phase):
-    file = os.path.join(WESAD_PATH, f"S{participant_idx}", f"S{participant_idx}_quest.csv")
+def get_time_intervals(wesad_path, participant_idx, phase):
+    file = os.path.join(wesad_path, f"S{participant_idx}", f"S{participant_idx}_quest.csv")
     df = pd.read_csv(file, sep=";", header=None, index_col=0).dropna(how="all")
     start = df.loc["# START", :].iloc[Phases.get_phase_index(phase)]
     end = df.loc["# END", :].iloc[Phases.get_phase_index(phase)]
