@@ -68,6 +68,8 @@ class FeatureSelector(BaseFeatureSelector):
         if col_types["subject"] == object:
             features["subject"] = pd.to_numeric(features["subject"])
         features = pd.get_dummies(features)
+        print(features.head())
+        print(self._labels.head())
         sfs = self._feature_selector.fit(features, self._labels)
         selected = sfs.get_feature_names_out()
         return [features, self._labels, self._feature_names, selected]

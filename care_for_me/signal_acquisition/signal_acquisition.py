@@ -8,7 +8,7 @@ from care_for_me.signal_acquisition.base_signal_acquisition import BaseSignalAcq
 
 class SignalAcquisition(BaseSignalAcquisition):
 
-    def __init__(self, signal_types, source_folder=None, name=None, labels=None):
+    def __init__(self, signal_types, source_folder, labels=None, name=None):
         """
         Constructor method for the signal acquisition layer.
         Parameters
@@ -26,14 +26,17 @@ class SignalAcquisition(BaseSignalAcquisition):
         if name is None:
             name = "Signal Acquisition"
         self._name = name
+
         if source_folder is not None:
             self._database = self.read_from_source_folder(source_folder, signal_types)
-        if labels == "phase":
-            self._labels = self.generate_phase_labels()
-        elif labels == "subject": 
-            self._labels = self.generate_subject_labels()
-        else:    # labels is path to a .csv file
-            self._labels = self.generate_labels_from_csv(labels)
+
+        if labels is not None:
+            if labels == "phase":
+                self._labels = self.generate_phase_labels()
+            elif labels == "subject": 
+                self._labels = self.generate_subject_labels()
+            else:    # labels is path to a .csv file
+                self._labels = self.generate_labels_from_csv(labels)
 
         self._input_type = None
         self._output_type = dict
@@ -58,15 +61,15 @@ class SignalAcquisition(BaseSignalAcquisition):
         data_files = self._get_data_files(source_folder, signal_types)
         # Need to distinguish between different participants
         data = {}
-        for key in list(data_files.keys()):    # key = subject index
-            data[key] = []
-            phases = set([f.split("_")[-2] for f in data_files[key]])
+        for subject in list(data_files.keys()):
+            data[subject] = []
+            phases = set([f.split("_")[-2] for f in data_files[subject]])
             for phase in phases:
-                sublist = [f for f in data_files[key] if phase in f]
+                sublist = [f for f in data_files[subject] if phase in f]
                 for f in sublist:
                     df = self.read_from_file(f)
                     df.insert(1, "Phase", phase)
-                    data[key].append(df)
+                    data[subject].append(df)
         return data
     
     def _get_data_files(self, source_folder, signal_types):

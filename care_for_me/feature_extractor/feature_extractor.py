@@ -40,7 +40,6 @@ class FeatureExtractor(BaseFeatureExtractor):
 
         :param name: Name of the instantiated object. Defaults to "Feature Extractor".
         :type name: str
-
         """
         if name is None:
             name = "Feature Extractor"
@@ -81,7 +80,7 @@ class FeatureExtractor(BaseFeatureExtractor):
         --------------------
         :param data: dict of {subject_index: [pd.DataFrame]}
             Keys correspond to subject indices.
-            Values are dicts of pd.DataFrames, where each DataFrame contains columns of the timestamp and processed signals for each subject.
+            Values are dicts of pd.DataFrames, where each DataFrame contains columns of the subject ID, timestamp, processed signals, and phase name for each subject.
         :type data: dict
             
         Returns 

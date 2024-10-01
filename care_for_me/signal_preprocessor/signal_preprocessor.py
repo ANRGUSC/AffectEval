@@ -136,8 +136,7 @@ class SignalPreprocessor(BaseSignalPreprocessor):
         # Merge dataframes for each subject
         for subject in self._processed_data.keys():
             dfs = self._processed_data[subject]
-
-
+            
         return [self._processed_data]
     
     def align_signal_start(self, data):
