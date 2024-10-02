@@ -49,11 +49,11 @@ class Estimator(BaseEstimator):
         if model is not None:
             self._model = model
         else:
-            self._model = SVC(random_state=16)
+            self._model = SVC()
         if cv is not None:
             self._cv = cv
         else:
-            self._cv = ShuffleSplit(n_splits=3, test_size=0.2, random_state=0)
+            self._cv = ShuffleSplit(n_splits=5, test_size=0.2, random_state=0)
         
         self._input_type = None
         self._output_type = None
@@ -89,8 +89,6 @@ class Estimator(BaseEstimator):
         If mode=1, returns: [fitted model, y_true, y_pred]
         If mode=2, returns: [fitted model, y_true, y_pred]
         """
-        # print(len(data))
-        # print(data)
         self._x = data[0]
         self._y = data[1]
         self._feature_names = data[2]
@@ -109,7 +107,6 @@ class Estimator(BaseEstimator):
         Returns [x, y, feature names, selected features, fitted model].
         """
         self._model.fit(x, y)
-        print(self._feature_names)
         return [x, y, self._feature_names, self._selected_features, self._model]
 
     def test(self, x, y_true):
@@ -133,7 +130,7 @@ class Estimator(BaseEstimator):
         Returns [fitted model, y_true, y_pred].
         """
         x_train, x_test, y_train, y_test = train_test_split(
-            x, y, test_size=0.33, random_state=42
+            x, y, test_size=0.33
         )
         scores = cross_val_score(self._model, x_train, y_train, cv=self._cv)
         print(f"Cross-validation scores: {scores}")
