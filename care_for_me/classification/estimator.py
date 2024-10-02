@@ -11,7 +11,7 @@ from sklearn.utils.validation import check_is_fitted
 class Estimator(BaseEstimator):
 
     def __init__(
-            self, mode, labels, label_generator_method,
+            self, mode,
             model=None, cv=None, name="Estimator", 
             run_method=None, verbose=True
         ):
@@ -46,14 +46,6 @@ class Estimator(BaseEstimator):
         self._name = name
         self._mode = mode
 
-        if type(labels) is pd.DataFrame:
-            self._labels = labels
-        else:
-            if type(label_generator_method) is str:
-                self.label_generator_method = self.read_labels
-            else:
-                self._label_generator_method = label_generator_method
-
         if model is not None:
             self._model = model
         else:
@@ -65,6 +57,11 @@ class Estimator(BaseEstimator):
         
         self._input_type = None
         self._output_type = None
+
+        self._x = None
+        self._y = None
+        self._feature_names = None
+        self._selected_features = None
 
         if run_method is None:
             if self._mode == 0:
@@ -92,19 +89,13 @@ class Estimator(BaseEstimator):
         If mode=1, returns: [fitted model, y_true, y_pred]
         If mode=2, returns: [fitted model, y_true, y_pred]
         """
+        # print(len(data))
+        # print(data)
         self._x = data[0]
         self._y = data[1]
         self._feature_names = data[2]
         self._selected_features = data[3]
         x_selected = self._x[self._selected_features]
-
-        if self._mode == 0:    # Training
-            out = self._run_method(x_selected, self._y)
-        elif self._mode == 1:    # Testing
-            fitted_estimator = data[4]
-            out = self._run_method(x_selected, self._y)
-        else:
-            out = self._run_method(x_selected, self._y)
 
         return self._run_method(x_selected, self._y)
 
@@ -118,6 +109,7 @@ class Estimator(BaseEstimator):
         Returns [x, y, feature names, selected features, fitted model].
         """
         self._model.fit(x, y)
+        print(self._feature_names)
         return [x, y, self._feature_names, self._selected_features, self._model]
 
     def test(self, x, y_true):

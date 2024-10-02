@@ -8,7 +8,7 @@ from care_for_me import tools
 
 class LabelGenerator(BaseLabelGenerator):
 
-    def __init__(self, label_generation_method, name=None):
+    def __init__(self, label_generation_method, labels_folder=None, drop_subject=False, drop_phase=False, name=None):
         """
         Constructor method for the label generation layer.
         Parameters
@@ -22,13 +22,47 @@ class LabelGenerator(BaseLabelGenerator):
         :type name: str
         """
         if name is None:
-            name = "Label Generator"
-            
+            self._name = "Label Generator"
+        
+        if label_generation_method == "subject":
+            self._label_gen = self.generate_subject_labels
+        elif label_generation_method == "phase":
+            self._label_gen = self.generate_phase_labels
+        else:
+            self._label_gen = label_generation_method
+
+        self._labels_folder = labels_folder
+        self._drop_subject = drop_subject
+        self._drop_phase = drop_phase
+
         self._input_type = None
         self._output_type = np.ndarray
 
     def run(self, data):
-        pass
+        data = data[0]
+        labels, data = self._label_gen(data)
+
+        if self._drop_subject and "subject" in labels.columns:
+            data = data.drop("subject", axis=1)
+        
+        if self._drop_phase and "Phase" in labels.columns:
+            data = data.drop("Phase", axis=1)
+
+        col_types = data.dtypes
+        if "subject" in data.columns and col_types["subject"] == object:
+            data["subject"] = pd.to_numeric(data["subject"])
+
+        return [data, labels]
+    
+    def generate_subject_labels(self, data):
+        labels = data["subject"]
+        data = data.drop("subject", axis=1)
+        return labels, data
+
+    def generate_phase_labels(self, data):
+        labels = data["Phase"]
+        data = data.drop("Phase", axis=1)
+        return labels, data
 
     @property
     def name(self):

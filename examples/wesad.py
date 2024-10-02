@@ -133,7 +133,7 @@ def reformat_and_save_data(wesad_path):
 
 
 def get_self_reports(wesad_path, phases, index, type):
-    file = os.path.join(wesad_path, f"S{index}", f"S{index}_quest.csv")
+    file = os.path.join(wesad_path, f"S{index}_quest.csv")
     df = pd.read_csv(file, sep=";", header=None, index_col=0).dropna(how="all")
     data = df.loc[f"# {type}", :].dropna(how="all", axis=1).transpose()
     columns = df.loc[f"# ORDER", :].dropna(how="all").tolist()[0:5]
