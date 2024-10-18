@@ -124,13 +124,15 @@ class Estimator(BaseEstimator):
         return [self._model, y_true, y_pred]
 
     def train_val_test(self, x, y):
+        # TODO: Make test set size a parameter
         """
+        Splits 
         Returns 
         --------------------
         Returns [fitted model, y_true, y_pred].
         """
         x_train, x_test, y_train, y_test = train_test_split(
-            x, y, test_size=0.33
+            x, y, test_size=0.2
         )
         scores = cross_val_score(self._model, x_train, y_train, cv=self._cv)
         print(f"Cross-validation scores: {scores}")
