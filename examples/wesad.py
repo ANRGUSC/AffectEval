@@ -100,18 +100,6 @@ def get_data_for_phase(participant_idx, phase, location, modalities=None):
     return out
 
 
-def get_participant_signals(participant_idx):
-    """
-    Returns a pd.DataFrame of all chest modalities across all phases for a given participant
-    """
-    data = []
-    for phase in Phases.PHASES_ORDERED:
-        phase_data = get_data_for_phase(participant_idx, phase, "chest")
-        data.append(phase_data)
-    data = pd.concat(data, axis=0)
-    return data
-
-
 def reformat_and_save_data(wesad_path):
     """
     Refactors the WESAD dataset into a format accepted by the CAREforMe pipeline. Refer to documentation to see
@@ -175,7 +163,11 @@ def get_stai_scores(wesad_path, phases):
 
 def generate_labels(wesad_path, binary_labels=True, threshold="fixed"):
     """
+    Generate labels for the WESAD dataset based on the STAI questionnaire.
     
+    Parameters
+    --------------------
+    :param wesad_path: 
     """
     phases = Phases.PHASES_ORDERED
     scores = get_stai_scores(wesad_path, phases)
