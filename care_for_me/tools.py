@@ -18,7 +18,7 @@ def get_sampling_rate(signal):
         return 1/delta
         # return delta
     except Exception as e:
-        print(e)
+        return None
 
 
 def display_signal(signal, data_type=None, title=None, labels=None, start=0, stop=None):

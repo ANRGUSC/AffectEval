@@ -54,6 +54,13 @@ class FeatureSelector(BaseFeatureSelector):
         """
         Parameters
         --------------------
+        :param data: List of variables required for this node.
+            data[0]: Features
+            data[1]: Labels
+        :type data: List
+            data[0]: pd.DataFrame
+            data[1]: np.ndarray
+
         Returns 
         --------------------
         A list containing a DataFrame of features (training samples), feature names, training data labels, and names of selected features
@@ -70,7 +77,6 @@ class FeatureSelector(BaseFeatureSelector):
 
         # Drop the original categorical columns
         features = df_encoded.drop(categorical_columns, axis=1)
-
         sfs = self._feature_selector.fit(features, labels)
         selected = sfs.get_feature_names_out()
         return [features, labels, self._feature_names, selected]

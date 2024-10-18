@@ -163,15 +163,15 @@ def reformat_and_save_data():
 def get_suds_labels(threshold="fixed"):
     phases = Phases.PHASES_LIST
     label_dict = {
-        "Baseline_Rest": "Baseline_SUDS", 
-        "BugBox_Relax": "BugBox_Relax_SUDS",
-        "BugBox_Anticipate": "BugBox_Preparation_SUDS",
-        "BugBox_Exposure": "BugBox_Exposure_SUDS", 
-        "BugBox_Break": "BugBox_Break_SUDS", 
-        "Speech_Relax": "Speech_Relax_SUDS",
-        "Speech_Anticipate": "Speech_SUDS",
-        "Speech_Exposure": "Speech_Exposure_SUDS",
-        "Speech_Break": "Speech_Break_SUDS"
+        "BaselineRest": "Baseline_SUDS", 
+        "BugBoxRelax": "BugBox_Relax_SUDS",
+        "BugBoxAnticipate": "BugBox_Preparation_SUDS",
+        "BugBoxExposure": "BugBox_Exposure_SUDS", 
+        "BugBoxBreak": "BugBox_Break_SUDS", 
+        "SpeechRelax": "Speech_Relax_SUDS",
+        "SpeechAnticipate": "Speech_SUDS",
+        "SpeechExposure": "Speech_Exposure_SUDS",
+        "SpeechBreak": "Speech_Break_SUDS"
     }
     for i in range(len(phases)):
         phases[i] = label_dict[phases[i]]

@@ -51,10 +51,13 @@ class LabelGenerator(BaseLabelGenerator):
         col_types = data.dtypes
         if "subject" in data.columns and col_types["subject"] == object:
             data["subject"] = pd.to_numeric(data["subject"])
-
+        
         return [data, labels]
     
     def generate_subject_labels(self, data):
+        """
+        Generates labels according to subject IDs. Removes subject ID from feature set.
+        """
         labels = data["subject"]
         data = data.drop("subject", axis=1)
         return labels, data

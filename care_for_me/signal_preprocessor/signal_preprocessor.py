@@ -100,9 +100,15 @@ class SignalPreprocessor(BaseSignalPreprocessor):
         # Find lowest sampling rate 
         for subject in list(data.keys()):
             data_list = data[subject]
-            for signal in data_list:
+            for i, signal in enumerate(data_list):
                 # Infer sample rate from timestamp
-                sampling_rates.append(tools.get_sampling_rate(signal))
+                sample_rate = tools.get_sampling_rate(signal)
+                if sample_rate is None:
+                    # Remove invalid signal DataFrames
+                    data[subject].pop(i)
+                else:
+                    sampling_rates.append(sample_rate)
+
         sampling_rates.append(self._resample_rate)
         min_sampling_rate = min(sampling_rates)
         

@@ -30,14 +30,6 @@ class SignalAcquisition(BaseSignalAcquisition):
         if source_folder is not None:
             self._database = self.read_from_source_folder(source_folder, signal_types)
 
-        if labels is not None:
-            if labels == "phase":
-                self._labels = self.generate_phase_labels()
-            elif labels == "subject": 
-                self._labels = self.generate_subject_labels()
-            else:    # labels is path to a .csv file
-                self._labels = self.generate_labels_from_csv(labels)
-
         self._input_type = None
         self._output_type = dict
 
@@ -117,15 +109,6 @@ class SignalAcquisition(BaseSignalAcquisition):
             timestamp, data, and label (if applicable) for one signal.
         """
         return [self._database]
-    
-    def generate_phase_labels(self):
-        pass
-    
-    def generate_subject_labels(self):
-        pass
-
-    def generate_labels_from_csv(self, file_path):
-        df = pd.read_csv(file_path)
     
     def add_to_database(self, data):
         self._database.append(data)

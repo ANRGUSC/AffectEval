@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.base import BaseEstimator
-from sklearn.model_selection import cross_val_score, ShuffleSplit, train_test_split
+from sklearn.model_selection import cross_val_score, StratifiedKFold, train_test_split
 from sklearn.preprocessing import normalize, StandardScaler
 from sklearn.svm import SVC
 from sklearn.utils.validation import check_is_fitted
@@ -19,22 +19,20 @@ class Estimator(BaseEstimator):
         Constructor method for the classification layer.
         Parameters
         --------------------
-        :param model: An unfitted estimator. Defaults to sklearn's SVC
-        :type model: sklearn classifier
-
-        :param labels: Labels OR path to file containing labels.
-        :type labels: pandas.DataFrame OR string (file path)
-
-        :param label_generator_method: Specifier for the type of label to generate. 
-
-        :type label_generator_method: str (for default methods, can be "subject", "phase")
-            callable (for custom label generation from a file specified by the labels parameter)
-
         :param mode: Integer indicating what mode to run the estimator.
             0 - Train only
             1 - Test only
             2 - Train and test
         :type mode: int
+
+        :param model: An unfitted estimator. Defaults to sklearn's SVC
+        :type model: sklearn classifier
+
+        :param cv: Cross-validation method to use. Defaults to StratifiedKFold with n_splits = 5.
+        :type cv: Any cross-validaiton method compatible with sklearn's cross_val_score
+            - int to specify the number of folds for StratifiedKFold
+            - CV splitter
+            - iterable that generates(train, test) splits as arrays of indices
 
         :param name: Name of the instantiated object. Defaults to "SVC"
         :type name: str
@@ -53,7 +51,7 @@ class Estimator(BaseEstimator):
         if cv is not None:
             self._cv = cv
         else:
-            self._cv = ShuffleSplit(n_splits=5, test_size=0.2, random_state=0)
+            self._cv = StratifiedKFold(n_splits=5)
         
         self._input_type = None
         self._output_type = None
@@ -126,7 +124,7 @@ class Estimator(BaseEstimator):
     def train_val_test(self, x, y):
         # TODO: Make test set size a parameter
         """
-        Splits 
+        Splits the input data into train and test sets. Default test split: 0.2
         Returns 
         --------------------
         Returns [fitted model, y_true, y_pred].
