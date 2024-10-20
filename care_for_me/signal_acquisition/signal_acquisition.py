@@ -55,7 +55,7 @@ class SignalAcquisition(BaseSignalAcquisition):
         data = {}
         for subject in list(data_files.keys()):
             data[subject] = []
-            phases = set([f.split("_")[-2] for f in data_files[subject]])
+            phases = set(["_".join(f.split("_")[1:-1]) for f in data_files[subject]])
             for phase in phases:
                 sublist = [f for f in data_files[subject] if phase in f]
                 for f in sublist:

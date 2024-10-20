@@ -15,10 +15,10 @@ import care_for_me.signals as signals
 from pathlib import Path
 
 
-ROOT_DIR = "C:\\Users\\zhoux\\Desktop\\Projects\\CAREforMe"
-DATA_DIR = os.path.join(ROOT_DIR, "data")
-APD_PATH = os.path.join(DATA_DIR, "APD")
-METRICS = os.path.join(DATA_DIR, "metrics", "APD")
+# ROOT_DIR = "C:\\Users\\zhoux\\Desktop\\Projects\\CAREforMe"
+# DATA_DIR = os.path.join(ROOT_DIR, "data")
+# APD_PATH = os.path.join(DATA_DIR, "APD")
+# METRICS = os.path.join(DATA_DIR, "metrics", "APD")
 
 
 class DataTypes:
@@ -141,14 +141,14 @@ class Responses:
     SAFETY = "safety_behavior_response"
 
 
-def reformat_and_save_data():
+def reformat_and_save_data(apd_path):
     for subject in SUBJECTS:
-        folder = os.path.join(APD_PATH, "formatted", f"{subject}")
+        folder = os.path.join(apd_path, "formatted", f"{subject}")
         print(f"Saving data for subject {subject}...")
         for task in Tasks.TASKS.keys():
             for phase in Tasks.TASKS[task]:
                 for mode in DataTypes.DATA_TYPES:
-                    file_name = os.path.join(APD_PATH, f"p_{subject}", task, f"{mode}_{phase}.csv")
+                    file_name = os.path.join(apd_path, f"p_{subject}", task, f"{mode}_{phase}.csv")
                     new_file = os.path.join(folder, f"{subject}_{phase}_{mode}.csv")
                     new_file = Path(new_file)
                     new_file.parent.mkdir(parents=True, exist_ok=True)
@@ -160,25 +160,29 @@ def reformat_and_save_data():
                     data.to_csv(new_file)
 
 
-def get_suds_labels(threshold="fixed"):
-    phases = Phases.PHASES_LIST
+def get_suds_labels(apd_path, threshold="fixed"):
+    suds_cols = [0 for _ in range(len(Phases.PHASES_LIST))]
     label_dict = {
-        "BaselineRest": "Baseline_SUDS", 
-        "BugBoxRelax": "BugBox_Relax_SUDS",
-        "BugBoxAnticipate": "BugBox_Preparation_SUDS",
-        "BugBoxExposure": "BugBox_Exposure_SUDS", 
-        "BugBoxBreak": "BugBox_Break_SUDS", 
-        "SpeechRelax": "Speech_Relax_SUDS",
-        "SpeechAnticipate": "Speech_SUDS",
-        "SpeechExposure": "Speech_Exposure_SUDS",
-        "SpeechBreak": "Speech_Break_SUDS"
+        "Baseline_Rest": "Baseline_SUDS", 
+        "BugBox_Relax": "BugBox_Relax_SUDS",
+        "BugBox_Anticipate": "BugBox_Preparation_SUDS",
+        "BugBox_Exposure": "BugBox_Exposure_SUDS", 
+        "BugBox_Break": "BugBox_Break_SUDS", 
+        "Speech_Relax": "Speech_Relax_SUDS",
+        "Speech_Anticipate": "Speech_SUDS",
+        "Speech_Exposure": "Speech_Exposure_SUDS",
+        "Speech_Break": "Speech_Break_SUDS"
     }
-    for i in range(len(phases)):
-        phases[i] = label_dict[phases[i]]
-    participant_file = os.path.join(APD_PATH, "participants_details.csv")
+    for i in range(len(Phases.PHASES_LIST)):
+        suds_cols[i] = label_dict[Phases.PHASES_LIST[i]]
+    participant_file = os.path.join(apd_path, "participants_details.csv")
     df = pd.read_csv(participant_file)
-    suds_labels = df.loc[:, ["Participant"] + phases]
-    mean_suds = np.mean(suds_labels.loc[:, phases], axis=1)
+    participant_ids = df.loc[:, "Participant"]
+    # Cast subject ID to the correct data type (int64)
+    participant_ids = participant_ids.apply(lambda x: int(x[1:]))
+
+    suds_labels = df.loc[:, suds_cols]
+    mean_suds = np.mean(suds_labels.loc[:, suds_cols], axis=1)
     labels = []
 
     for i in range(suds_labels.shape[0]):
@@ -187,7 +191,7 @@ def get_suds_labels(threshold="fixed"):
         else:
             mean = mean_suds.iloc[i, :]
 
-        row = suds_labels[phases].iloc[i]
+        row = suds_labels[suds_cols].iloc[i]
         zero_idx = row.index[row < mean]
         one_idx = row.index[row >= mean]
         row[zero_idx] = 0
@@ -196,5 +200,20 @@ def get_suds_labels(threshold="fixed"):
         labels.append(row)
 
     labels = pd.DataFrame(labels)
+    labels.insert(0, "subject", participant_ids)
+
+    # Rename label columns to be consistent with phase names
+    mapping = {
+        "Baseline_SUDS": "Baseline_Rest",
+        "BugBox_Relax_SUDS": "BugBox_Relax",
+        "BugBox_Preparation_SUDS": "BugBox_Anticipate",
+        "BugBox_Exposure_SUDS": "BugBox_Exposure",
+        "BugBox_Break_SUDS": "BugBox_Break",
+        "Speech_Relax_SUDS": "Speech_Relax",
+        "Speech_SUDS": "Speech_Anticipate",
+        "Speech_Exposure_SUDS": "Speech_Exposure",
+        "Speech_Break_SUDS": "Speech_Break"
+    }
+    labels = labels.rename(columns=mapping)
 
     return labels
