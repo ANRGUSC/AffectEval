@@ -27,7 +27,7 @@ class DataTypes:
     WRIST_L = "LeftWrist"
     WRIST_R = "RightWrist"
     EDA = "EDA"
-    ECG = "Heart"
+    ECG = "ECG"    # NOTE: Make sure that 'Heart' files are renamed to 'ECG' first
     POSTURE = "Posture"
 
     DATA_TYPES = [
@@ -131,6 +131,7 @@ class Groups:
     ]
 
 SUBJECTS = Groups.ha_participant_indices + Groups.la_participant_indices
+INVALID_SUBJECTS = ['4', '57', '93', '16', '87', '8', '21', '88', '84', '23']
 
 
 class Responses:
@@ -143,21 +144,26 @@ class Responses:
 
 def reformat_and_save_data(apd_path):
     for subject in SUBJECTS:
-        folder = os.path.join(apd_path, "formatted", f"{subject}")
-        print(f"Saving data for subject {subject}...")
-        for task in Tasks.TASKS.keys():
-            for phase in Tasks.TASKS[task]:
-                for mode in DataTypes.DATA_TYPES:
-                    file_name = os.path.join(apd_path, f"p_{subject}", task, f"{mode}_{phase}.csv")
-                    new_file = os.path.join(folder, f"{subject}_{phase}_{mode}.csv")
-                    new_file = Path(new_file)
-                    new_file.parent.mkdir(parents=True, exist_ok=True)
-                    data = pd.read_csv(file_name)
-                    # Add artificial timestamp column
-                    fs = FS_DICT[mode]
-                    timestamp = [1/fs*i for i in range(data.shape[0])]
-                    data["timestamp"] = timestamp
-                    data.to_csv(new_file)
+        if subject not in INVALID_SUBJECTS:
+            folder = os.path.join(apd_path, "formatted", f"{subject}")
+            if not os.path.exists(folder):
+                os.mkdir(folder)
+            print(f"Saving data for subject {subject}...")
+            for task in Tasks.TASKS.keys():
+                for phase in Tasks.TASKS[task]:
+                    for mode in DataTypes.DATA_TYPES:
+                        # file_name = os.path.join(apd_path, f"p_{subject}", task, f"{mode}_{phase}.csv")
+                        file_name = os.path.join(folder, f"{subject}_{phase}_{mode}.csv")
+                        new_file = os.path.join(folder, f"{subject}_{phase}_{mode}.csv")
+                        new_file = Path(new_file)
+                        new_file.parent.mkdir(parents=True, exist_ok=True)
+                        data = pd.read_csv(file_name, index_col=0)
+                        # Add artificial timestamp column
+                        fs = FS_DICT[mode]
+                        timestamp = [1/fs*i for i in range(data.shape[0])]
+                        data["timestamp"] = timestamp
+                        data = data.rename(columns={"ECG reading": "ECG"})    # Rename data column for ECG files
+                        data.to_csv(new_file)
 
 
 def get_suds_labels(apd_path, threshold="fixed"):

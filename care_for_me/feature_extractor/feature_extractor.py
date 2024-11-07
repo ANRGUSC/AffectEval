@@ -26,6 +26,7 @@ OVERLAP_TEMP = 30
 
 
 # TODO: Add window sizes for different signals as a parameter
+# TODO: Make pyhrv extraction more efficient
 class FeatureExtractor(BaseFeatureExtractor):
 
     def __init__(self, feature_extraction_methods=None, name=None):
@@ -104,8 +105,10 @@ class FeatureExtractor(BaseFeatureExtractor):
                             method = self._feature_extraction_methods[signal_type][feature]
                             feat = method(signal)
                             if feature in extracted.keys():
+                                # Append to existing feature list
                                 extracted[feature].append(statistics.mean(feat))
                             else:
+                                # Create new list for new feature type
                                 extracted[feature] = [statistics.mean(feat)]
             extracted = pd.DataFrame(extracted)
             extracted.insert(0, "subject", subject)

@@ -31,8 +31,6 @@ class SignalPreprocessor(BaseSignalPreprocessor):
         :type name: str
 
         :param skip: Flag to skip the default signal preprocessing. Defaults to True (default feature extractor methods also perform the same preprocessing steps)
-            If preprocessing is skipped, signals are still downsampled if necessary to match the lowest sampling rate 
-            present in the collection of signals 
         :type skip: bool
 
         :param resample_rate: New sampling rate to resample all signals to. Defaults to the lowest sampling rate present in the collection of signals. 
@@ -96,11 +94,58 @@ class SignalPreprocessor(BaseSignalPreprocessor):
             Signal DataFrames in each sublist are resampled and processed separately.
         """
         data = data[0]
+        if self._resample_rate > 0:
+            min_sampling_rate = self._get_min_sample_rate(data)
+        
+        for subject in list(data.keys()):
+            data_list = data[subject]
+            self._processed_data[subject] = []
+            sampling_rates = [tools.get_sampling_rate(signal) for signal in data_list]
+            for i, signal in enumerate(data_list):
+                if signal.empty:    # Skip if DataFrame is empty
+                    continue
+                phase = signal["Phase"].iloc[0]
+                signal_type = signal.columns[2]
+                sampling_rate = sampling_rates[i]
+                if self._resample_rate > 0:
+                    temp = samplerate.resample(signal.iloc[:, -1], min_sampling_rate/sampling_rate)  # type: np.ndarray
+                    sampling_rate = min_sampling_rate
+                else:    # Do not resample
+                    temp = signal.iloc[:, -1]
+                temp = pd.DataFrame(data=temp, columns=[signal_type])
+                if not self.skip:
+                    try:
+                        method = self._preprocessing_methods[signal_type]
+                        temp = method(temp, sampling_rate)
+                        if type(temp) is pd.Series:    # Necessary because some preprocessing methods convert the np.ndarray to pd.Series
+                            temp = temp.to_frame()
+                            temp.columns = [signal_type]
+                        else:
+                            temp = pd.DataFrame(data=temp, columns=[signal_type])
+                    except Exception as e:
+                        print(f"Error processing {signal_type}. Returning resampled signal.")
+
+                # Add updated timestamp column
+                # TODO: Fix timestamp generation. This sets the timestamp of the first sample to 0, which isn't necessarily what we want. 
+                timestamp = [1/sampling_rates[i]*j for j in range(temp.shape[0])]    
+                temp.insert(0, "timestamp", timestamp)
+                temp.insert(1, "Phase", phase)
+                self._processed_data[subject].append(temp)
+        
+        # Merge dataframes for each subject
+        # for subject in self._processed_data.keys():
+        #     dfs = self._processed_data[subject]
+            
+        return [self._processed_data]
+    
+    def _get_min_sample_rate(self, data):
         sampling_rates = []
         # Find lowest sampling rate 
         for subject in list(data.keys()):
             data_list = data[subject]
             for i, signal in enumerate(data_list):
+                if signal.empty:    # Skip if DataFrame is empty
+                    continue
                 # Infer sample rate from timestamp
                 sample_rate = tools.get_sampling_rate(signal)
                 if sample_rate is None:
@@ -110,40 +155,7 @@ class SignalPreprocessor(BaseSignalPreprocessor):
                     sampling_rates.append(sample_rate)
 
         sampling_rates.append(self._resample_rate)
-        min_sampling_rate = min(sampling_rates)
-        
-        for subject in list(data.keys()):
-            data_list = data[subject]
-            self._processed_data[subject] = []
-            for signal in data_list:
-                phase = signal["Phase"].iloc[0]
-                signal_type = signal.columns[2]
-                sampling_rate = tools.get_sampling_rate(signal)
-                temp = samplerate.resample(signal.iloc[:, -1], min_sampling_rate/sampling_rate)  # type: np.ndarray
-                temp = pd.DataFrame(data=temp, columns=[signal_type])
-                if not self.skip:
-                    try:
-                        method = self._preprocessing_methods[signal_type]
-                        temp = method(temp, min_sampling_rate)
-                        if type(temp) is pd.Series:    # Necessary because some preprocessing methods convert the np.ndarray to pd.Series
-                            temp = temp.to_frame()
-                            temp.columns = [signal_type]
-                        else:
-                            temp = pd.DataFrame(data=temp, columns=[signal_type])
-                    except Exception as e:
-                        print(f"Error processing {signal_type}. Returning resampled signal.")
-                # Add updated timestamp column
-                # TODO: Fix timestamp generation. This sets the timestamp of the first sample to 0, which isn't necessarily what we want. 
-                timestamp = [1/min_sampling_rate*i for i in range(temp.shape[0])]    
-                temp.insert(0, "timestamp", timestamp)
-                temp.insert(1, "Phase", phase)
-                self._processed_data[subject].append(temp)
-        
-        # Merge dataframes for each subject
-        for subject in self._processed_data.keys():
-            dfs = self._processed_data[subject]
-            
-        return [self._processed_data]
+        return min(sampling_rates)
     
     def align_signal_start(self, data):
         # May refactor run() so that signals are first aligned and combined into one DataFrame before processing.

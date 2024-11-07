@@ -40,6 +40,7 @@ class SignalAcquisition(BaseSignalAcquisition):
         """
         Reads all .csv and .json files from the source folder recursively. Files in the same folder will 
         be grouped together in one list.
+        Infers phase name from the file name and appends it as a column in the DataFrame.
 
         Parameters
         --------------------
