@@ -3,6 +3,7 @@ import pandas as pd
 
 import biosppy as bp
 import heartpy as hp
+import itertools
 import neurokit2 as nk
 import pyhrv.time_domain as td
 import scipy
@@ -104,6 +105,7 @@ class FeatureExtractor(BaseFeatureExtractor):
             for df in data[subject]:    # Each DataFrame is a different phase
                 phase = df["Phase"][0]
                 signal_types = df.columns[2:]
+                max_len = 0
                 for signal_type in signal_types:    # Each DataFrame contains multiple signal types
                     if signal_type in list(self._feature_extraction_methods.keys()):
                         signal = df.loc[:, ["timestamp", signal_type]]
@@ -113,6 +115,8 @@ class FeatureExtractor(BaseFeatureExtractor):
                             fs = tools.get_sampling_rate(signal)
                             # Take non-timestamp columns of signal
                             feat = method(signal.loc[:, signal_type], fs)
+                            if len(feat) > max_len:
+                                max_len = len(feat)
                             if feature in extracted.keys():
                                 # Append to existing feature list
                                 if self._calculate_mean:
@@ -120,7 +124,7 @@ class FeatureExtractor(BaseFeatureExtractor):
                                 else:
                                     if type(feat) is not list:
                                         feat = [feat]
-                                    extracted[feature] = extracted[feature] + feat
+                                    extracted[feature].append(feat)
                             else:
                                 # Create new list for new feature type
                                 if self._calculate_mean:
@@ -128,7 +132,7 @@ class FeatureExtractor(BaseFeatureExtractor):
                                 else:
                                     if type(feat) is not list:
                                         feat = [feat]
-                                    extracted[feature] = feat
+                                    extracted[feature] = [feat]
 
                             if phase not in phase_counts.keys():
                                 phase_counts[phase] = len(feat)
@@ -141,13 +145,20 @@ class FeatureExtractor(BaseFeatureExtractor):
             if self._calculate_mean:
                 extracted = pd.DataFrame(extracted)
             else:
-                extracted = pd.DataFrame({feature: pd.Series(extracted[feature]) for feature in extracted.keys()})
-                extracted.insert(0, "Phase", phases)
+                for i, phase in enumerate(list(phase_counts.keys())):
+                    count = phase_counts[phase]
+                    for feat in extracted.keys():
+                        feature = extracted[feat][i]
+                        if len(feature) < count:
+                            feature += [np.NaN]*(count-len(feature))
+            for feat in extracted.keys():
+                extracted[feat] = list(itertools.chain.from_iterable(extracted[feat]))
+            extracted = pd.DataFrame({feature: pd.Series(extracted[feature]) for feature in extracted.keys()})
+            extracted.insert(0, "Phase", phases)
             extracted.insert(0, "subject", subject)
             self._features.append(extracted)
 
         features = pd.concat(self._features, axis=0)
-        # print(features.head())
         features = features.reset_index(drop=True)
         return [features]
     

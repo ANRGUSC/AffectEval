@@ -150,12 +150,23 @@ class Estimator(BaseEstimator):
         )
         for model_name in self._models.keys():
             model = self._models[model_name]
-            scores = cross_val_score(model, x_train, y_train, cv=self._cv)
-            print(f"Cross-validation scores: {scores}")
+            acc = cross_val_score(model, x_train, y_train, cv=self._cv, scoring="accuracy")
+            print(f"Cross-validation acc: {acc}")
+            print(f"Cross-validation mean acc: {np.mean(acc)}")
+            print(f"Cross-validation std acc: {np.std(acc)}")
+            f1 = cross_val_score(model, x_train, y_train, cv=self._cv, scoring="f1")
+            print(f"Cross-validation f1: {f1}")
+            print(f"Cross-validation mean f1: {np.mean(f1)}")
+            print(f"Cross-validation std f1: {np.std(f1)}")
+            auc = cross_val_score(model, x_train, y_train, cv=self._cv, scoring="roc_auc")
+            print(f"Cross-validation auc: {auc}")
+            print(f"Cross-validation mean auc: {np.mean(auc)}")
+            print(f"Cross-validation std auc: {np.std(auc)}")
             model.fit(x_train, y_train)
 
             y_pred = model.predict(x_test)
             y_preds[model_name] = y_pred
+        
         return [self._models, y_test, y_preds]
 
 
