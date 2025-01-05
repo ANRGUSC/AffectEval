@@ -8,20 +8,18 @@ from care_for_me.signal_acquisition.base_signal_acquisition import BaseSignalAcq
 
 class SignalAcquisition(BaseSignalAcquisition):
 
-    def __init__(self, signal_types, source_folder, labels=None, name=None):
+    def __init__(self, signal_types, source_folder, name=None):
         """
         Constructor method for the signal acquisition layer.
         Parameters
         --------------------
-        :param source_folder: Absolute path to folder containing (possibly) subfolders and .csv and/or .json files of raw signals.
-            Must follow the structure described in the ReadME file.
-        :type source_folder: str
         :param signal_types: List of signal types to read in. Must match signal types listed in signals.py
         :type signal_type: str
+        :param source_folder: Absolute path to folder containing (possibly) subfolders and .csv and/or .json files of raw signals.
+            Must follow the structure described in the README file.
+        :type source_folder: str
         :param name: Name of the signal acquisition layer.
         :type name: str
-        :param labels: Generates labels depending on passed value. Can be 'phase', 'subject', or the absolute path to a .csv file of annotations.
-        :type labels: str
         """
         if name is None:
             name = "Signal Acquisition"

@@ -4,5 +4,5 @@ from abc import ABC, abstractmethod
 class BaseFeatureSelector(ABC):
 
     @abstractmethod
-    def run(self):
+    def run(self, data):
         pass

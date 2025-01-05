@@ -52,7 +52,8 @@ class LabelGenerator(BaseLabelGenerator):
         if "subject" in data.columns and col_types["subject"] == object:
             data["subject"] = pd.to_numeric(data["subject"])
         
-        return [data, labels]
+        feature_names = list(data.columns)[2:]
+        return [data, labels, feature_names]
     
     def generate_subject_labels(self, data):
         """

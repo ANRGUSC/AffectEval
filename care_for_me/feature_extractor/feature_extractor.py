@@ -15,21 +15,27 @@ from care_for_me import tools
 
 # Sliding window parameters for feature extraction
 WINDOW_SIZE_ECG = 60
-OVERLAP_ECG = 30
+OVERLAP_ECG = 0.25
 
 WINDOW_SIZE_EDA = 60
-OVERLAP_EDA = 30
+OVERLAP_EDA = 0.25
 MIN_AMP = 0.3  # Minimum threshold by which to exclude SCRs (peaks) as relative to the largest amplitude in the signal (from neurokit documentation)
 
 WINDOW_SIZE_TEMP = 60
-OVERLAP_TEMP = 30
+OVERLAP_TEMP = 0.25
+
+WINDOW_SIZE_RESP = 60
+OVERLAP_RESP = 0.25
+
+WINDOW_SIZE_EMG = 60
+OVERLAP_EMG = 0.25
 
 
 # TODO: Add window sizes for different signals as a parameter
 # TODO: Make pyhrv extraction more efficient
 class FeatureExtractor(BaseFeatureExtractor):
 
-    def __init__(self, feature_extraction_methods=None, name=None):
+    def __init__(self, feature_extraction_methods=None, name=None, calculate_mean=False):
         """
         Constructor method for the feature extraction layer.
         Parameters
@@ -48,6 +54,7 @@ class FeatureExtractor(BaseFeatureExtractor):
         self._features = []
         self._input_type = None
         self._output_type = np.ndarray
+        self._calculate_mean = calculate_mean
 
         if feature_extraction_methods is not None:
                 self._feature_extraction_methods = feature_extraction_methods
@@ -76,6 +83,7 @@ class FeatureExtractor(BaseFeatureExtractor):
         # Add data to self._features DataFrame accordingly
                 
     def run(self, data):
+        # TODO: Refactor feature averaging into a combine_features() method that can be overriden via a class parameter.
         """
         Parameters
         --------------------
@@ -91,35 +99,59 @@ class FeatureExtractor(BaseFeatureExtractor):
         """
         data = data[0] 
         for subject in tqdm(list(data.keys())):
-            extracted = {"Phase": []}
-            for df in data[subject]:
+            phase_counts = {}
+            extracted = {}
+            for df in data[subject]:    # Each DataFrame is a different phase
                 phase = df["Phase"][0]
-                if phase not in extracted["Phase"]:    # Add phase name as dictionary key if not already in dict
-                    extracted["Phase"].append(phase)
                 signal_types = df.columns[2:]
-                for signal_type in signal_types:
+                for signal_type in signal_types:    # Each DataFrame contains multiple signal types
                     if signal_type in list(self._feature_extraction_methods.keys()):
                         signal = df.loc[:, ["timestamp", signal_type]]
                         features = list(self._feature_extraction_methods[signal_type].keys())
-                        for feature in features:
+                        for feature in features:    # Extract features from each signal column and horizontally concatenate them
                             method = self._feature_extraction_methods[signal_type][feature]
-                            feat = method(signal)
+                            fs = tools.get_sampling_rate(signal)
+                            # Take non-timestamp columns of signal
+                            feat = method(signal.loc[:, signal_type], fs)
                             if feature in extracted.keys():
                                 # Append to existing feature list
-                                extracted[feature].append(statistics.mean(feat))
+                                if self._calculate_mean:
+                                    extracted[feature].append(statistics.mean(feat))
+                                else:
+                                    if type(feat) is not list:
+                                        feat = [feat]
+                                    extracted[feature] = extracted[feature] + feat
                             else:
                                 # Create new list for new feature type
-                                extracted[feature] = [statistics.mean(feat)]
-            extracted = pd.DataFrame(extracted)
+                                if self._calculate_mean:
+                                    extracted[feature] = [statistics.mean(feat)]
+                                else:
+                                    if type(feat) is not list:
+                                        feat = [feat]
+                                    extracted[feature] = feat
+
+                            if phase not in phase_counts.keys():
+                                phase_counts[phase] = len(feat)
+                            else:
+                                if phase_counts[phase] < len(feat):
+                                    phase_counts[phase] = len(feat)
+            phases = []
+            for phase in phase_counts:
+                phases += [phase for _ in range(phase_counts[phase])]
+            if self._calculate_mean:
+                extracted = pd.DataFrame(extracted)
+            else:
+                extracted = pd.DataFrame({feature: pd.Series(extracted[feature]) for feature in extracted.keys()})
+                extracted.insert(0, "Phase", phases)
             extracted.insert(0, "subject", subject)
             self._features.append(extracted)
-        features = pd.concat(self._features)
-        col = features.pop("Phase")
-        features.insert(1, col.name, col)
+
+        features = pd.concat(self._features, axis=0)
+        # print(features.head())
         features = features.reset_index(drop=True)
         return [features]
     
-    def extract_ecg_features_pyhrv(self, signal):
+    def extract_ecg_features_pyhrv(self, signal, fs):
         """
         Extracts ECG features (heart rate, RMSSD, SDNN) using pyhrv methods
         """
@@ -173,19 +205,19 @@ class FeatureExtractor(BaseFeatureExtractor):
                 start = stop - overlap
         return hr, rmssd, sdnn
     
-    def extract_hr(self, signal):
-        hr, _, _ = self.extract_ecg_features_pyhrv(signal)
+    def extract_hr(self, signal, fs):
+        hr, _, _ = self.extract_ecg_features_pyhrv(signal, fs)
         return hr
     
-    def extract_rmssd(self, signal):
-        _, rmssd, _ = self.extract_ecg_features_pyhrv(signal)
+    def extract_rmssd(self, signal, fs):
+        _, rmssd, _ = self.extract_ecg_features_pyhrv(signal, fs)
         return rmssd
     
-    def extract_sdnn(self, signal):
-        _, _, sdnn = self.extract_ecg_features_pyhrv(signal)
+    def extract_sdnn(self, signal, fs):
+        _, _, sdnn = self.extract_ecg_features_pyhrv(signal, fs)
         return sdnn
     
-    def extract_eda_features_nk(self, signal):
+    def extract_eda_features_nk(self, signal, fs):
         """
         Extracts EDA features (mean SCL, SCR rate) using neurokit methods
         """
@@ -208,12 +240,12 @@ class FeatureExtractor(BaseFeatureExtractor):
 
         return tonic, peaks
     
-    def extract_mean_scl(self, signal):
+    def extract_mean_scl(self, signal, fs):
         fs = tools.get_sampling_rate(signal)
         window_size = int(WINDOW_SIZE_EDA*fs)
         overlap = int(OVERLAP_EDA*fs)
 
-        tonic, _ = self.extract_eda_features_nk(signal)
+        tonic, _ = self.extract_eda_features_nk(signal, fs)
 
         if tonic is None:
             print("mean SCL is None")
@@ -236,12 +268,12 @@ class FeatureExtractor(BaseFeatureExtractor):
         mean_scl = list(out)
         return mean_scl
 
-    def extract_scr_rate(self, signal):
+    def extract_scr_rate(self, signal, fs):
         fs = tools.get_sampling_rate(signal)
         window_size = int(WINDOW_SIZE_EDA*fs)
         overlap = int(OVERLAP_EDA*fs)
 
-        _, peaks = self.extract_eda_features_nk(signal)
+        _, peaks = self.extract_eda_features_nk(signal, fs)
 
         if peaks is None:
             print("SCR rate is None")

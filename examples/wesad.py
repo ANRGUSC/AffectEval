@@ -5,6 +5,10 @@ import os
 import pandas as pd
 import care_for_me.signals as signals
 
+ROOT_DIR = "/Users/emilyzhou/Desktop/Research/CAREForMe/"
+DATA_DIR = os.path.join(ROOT_DIR, "data")
+WESAD_PATH = os.path.join(DATA_DIR, "WESAD")
+SOURCE_FOLDER = os.path.join(WESAD_PATH, "original")
 
 subject_indices = list(range(2, 12)) + list(range(13, 18))
 SUBJECTS = [str(i) for i in subject_indices]
@@ -74,28 +78,39 @@ def get_data_for_phase(participant_idx, phase, location, modalities=None):
     Returns a pd.DataFrame of specified modalities for the given phase and participant.
     If a modality has multiple columns (e.g., ACC), they will be combined into one DataFrame.
     """
+    phase_dict = {
+        Phases.BASE: 1,
+        Phases.TSST: 2,
+        Phases.FUN: 3       
+    }
     if modalities is None:
         modalities = WESAD_chest_modalities
     if type(modalities) is not list:
         modalities = [modalities]
     out = []
     for m in modalities:
-        data_col = get_modality(participant_idx, location, m)
-        start, end = get_time_intervals(participant_idx, phase)
-        fs = FS_DICT[location][m]
-        start_index = math.floor(start*fs)
-        end_index = math.ceil(end*fs)
-        data_col = data_col[start_index:end_index, :]
+        file = os.path.join(SOURCE_FOLDER, f"S{participant_idx}", f"S{participant_idx}.pkl")
+        data = pd.read_pickle(file)
+        labels = data["label"]
+        signals = data["signal"]["chest"]
+        if m == "TEMP":
+            signals["TEMP"] = signals.pop("Temp")
+        if m == "RESP":
+            signals["RESP"] = signals.pop["Resp"]
+        signal = signals[m]
+        phase = phase_dict[phase]
+        indices = [i for i, x in enumerate(labels) if x == phase]
+        data_col = [signal[i] for i in indices]
+        columns = [m]
+        data_col = pd.DataFrame(data_col, columns=columns)
 
         num_cols = data_col.shape[1]
-        # Probably don't need to do this again
         if num_cols > 1:
             columns = [f"{m}_{i+1}" for i in range(num_cols)]
         else:
             columns = [m]
-        data_col = pd.DataFrame(data_col, columns=columns)
-
         out.append(data_col)
+
     out = pd.concat(out, axis=1)
     return out
 
@@ -108,15 +123,19 @@ def reformat_and_save_data(wesad_path):
     for subject in SUBJECTS:
         folder = os.path.join(wesad_path, "formatted", f"{subject}")
         print(f"Saving data for subject {subject}...")
-        for phase in Phases.PHASES_ORDERED:
+        for phase in [Phases.BASE, Phases.TSST, Phases.FUN]:
             print(f"Phase {phase}")
             for mode in WESAD_chest_modalities:
+                if mode == "ACC":
+                    continue
                 file_name = os.path.join(folder, f"{subject}_{phase}_{mode}.csv")
                 # data = get_participant_signals(subject)
                 data = get_data_for_phase(subject, phase, "chest", mode)
                 # Add artificial timestamp column
                 timestamp = [1/700*i for i in range(data.shape[0])]
                 data.insert(0, "timestamp", timestamp)
+                if not os.path.exists(folder):
+                    os.makedirs(folder)
                 data.to_csv(file_name)
 
 

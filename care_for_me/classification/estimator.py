@@ -12,8 +12,8 @@ class Estimator(BaseEstimator):
 
     def __init__(
             self, mode,
-            model=None, cv=None, name="Estimator", 
-            run_method=None, verbose=True
+            models=None, cv=None, name="Estimator", 
+            run_method=None, verbose=True, random_seed=None
         ):
         """
         Constructor method for the classification layer.
@@ -29,7 +29,7 @@ class Estimator(BaseEstimator):
         :type model: sklearn classifier
 
         :param cv: Cross-validation method to use. Defaults to StratifiedKFold with n_splits = 5.
-        :type cv: Any cross-validaiton method compatible with sklearn's cross_val_score
+        :type cv: Any cross-validation method compatible with sklearn's cross_val_score
             - int to specify the number of folds for StratifiedKFold
             - CV splitter
             - iterable that generates(train, test) splits as arrays of indices
@@ -44,10 +44,10 @@ class Estimator(BaseEstimator):
         self._name = name
         self._mode = mode
 
-        if model is not None:
-            self._model = model
+        if models is not None:
+            self._models = models
         else:
-            self._model = SVC()
+            self._models = {"SVM": SVC()}
         if cv is not None:
             self._cv = cv
         else:
@@ -70,7 +70,7 @@ class Estimator(BaseEstimator):
                 run_method = self.train_val_test
         self._run_method = run_method
 
-        self._random_seed = None
+        self.set_random_seed(random_seed)
 
     def read_labels(self, labels):
         pass
@@ -90,8 +90,16 @@ class Estimator(BaseEstimator):
         self._x = data[0]
         self._y = data[1]
         self._feature_names = data[2]
-        self._selected_features = data[3]
+        if len(data) == 4:
+            self._selected_features = data[3]
+        else:
+            self._selected_features = data[2]
         x_selected = self._x[self._selected_features]
+        
+        # Drop NaN rows
+        nan_rows = x_selected[x_selected.isna().any(axis=1)].index
+        x_selected = x_selected.drop(nan_rows)
+        self._y = np.delete(self._y, nan_rows, axis=0)
 
         return self._run_method(x_selected, self._y)
 
@@ -104,8 +112,10 @@ class Estimator(BaseEstimator):
         --------------------
         Returns [x, y, feature names, selected features, fitted model].
         """
-        self._model.fit(x, y)
-        return [x, y, self._feature_names, self._selected_features, self._model]
+        for model_name in self._models.keys():
+            model = self._models[model_name]
+            model.fit(x, y)
+        return [x, y, self._feature_names, self._selected_features, self._models]
 
     def test(self, x, y_true):
         """
@@ -113,13 +123,18 @@ class Estimator(BaseEstimator):
         --------------------
         Returns [fitted model, y_true, y_pred].
         """
-        try:
-            check_is_fitted(self._model)    # This requires that any model passed in must be compatible with sklearn (define __sklearn_is_fitted__ method returning a boolean)
-            y_pred = self._model.predict(x)
-        except Exception:
-            print("Model has not been fitted. Returning unfitted model and NaN predictions.")
-            y_pred = np.full(y_true.shape, np.nan)
-        return [self._model, y_true, y_pred]
+        y_preds = []
+        for model_name in self._models.keys():
+            model = self._models[model_name]
+            try:
+                check_is_fitted(model)    # This requires that any model passed in must be compatible with sklearn (define __sklearn_is_fitted__ method returning a boolean)
+                y_pred = model.predict(x)
+                y_preds.append(y_pred)
+            except Exception:
+                print("Model has not been fitted. Returning unfitted model and NaN predictions.")
+                y_pred = np.full(y_true.shape, np.nan)
+                y_preds.append(y_pred)
+        return [self._models, y_true, y_preds]
 
     def train_val_test(self, x, y):
         # TODO: Make test set size a parameter
@@ -129,15 +144,19 @@ class Estimator(BaseEstimator):
         --------------------
         Returns [fitted model, y_true, y_pred].
         """
+        y_preds = {}
         x_train, x_test, y_train, y_test = train_test_split(
-            x, y, test_size=0.2
+            x, y, test_size=0.2, random_state=self._random_seed
         )
-        scores = cross_val_score(self._model, x_train, y_train, cv=self._cv)
-        print(f"Cross-validation scores: {scores}")
-        self._model.fit(x_train, y_train)
+        for model_name in self._models.keys():
+            model = self._models[model_name]
+            scores = cross_val_score(model, x_train, y_train, cv=self._cv)
+            print(f"Cross-validation scores: {scores}")
+            model.fit(x_train, y_train)
 
-        y_pred = self._model.predict(x_test)
-        return [self._model, y_test, y_pred]
+            y_pred = model.predict(x_test)
+            y_preds[model_name] = y_pred
+        return [self._models, y_test, y_preds]
 
 
 

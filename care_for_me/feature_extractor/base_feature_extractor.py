@@ -8,9 +8,9 @@ class BaseFeatureExtractor(ABC):
         pass
 
     @abstractmethod
-    def read_from_file(self,file_path):
+    def read_from_file(self, file_path):
         pass
 
     @abstractmethod
-    def run(self):
+    def run(self, data):
         pass

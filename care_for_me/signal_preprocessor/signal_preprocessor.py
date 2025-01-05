@@ -94,8 +94,7 @@ class SignalPreprocessor(BaseSignalPreprocessor):
             Signal DataFrames in each sublist are resampled and processed separately.
         """
         data = data[0]
-        if self._resample_rate > 0:
-            min_sampling_rate = self._get_min_sample_rate(data)
+        min_sampling_rate = self._get_min_sample_rate(data)
         
         for subject in list(data.keys()):
             data_list = data[subject]
@@ -107,9 +106,9 @@ class SignalPreprocessor(BaseSignalPreprocessor):
                 phase = signal["Phase"].iloc[0]
                 signal_type = signal.columns[2]
                 sampling_rate = sampling_rates[i]
-                if self._resample_rate > 0:
-                    temp = samplerate.resample(signal.iloc[:, -1], min_sampling_rate/sampling_rate)  # type: np.ndarray
-                    sampling_rate = min_sampling_rate
+                if self._resample_rate >= min_sampling_rate:
+                    temp = samplerate.resample(signal.iloc[:, -1], self._resample_rate/sampling_rate)  # type: np.ndarray
+                    sampling_rate = self._resample_rate
                 else:    # Do not resample
                     temp = signal.iloc[:, -1]
                 temp = pd.DataFrame(data=temp, columns=[signal_type])
@@ -123,11 +122,12 @@ class SignalPreprocessor(BaseSignalPreprocessor):
                         else:
                             temp = pd.DataFrame(data=temp, columns=[signal_type])
                     except Exception as e:
+                        raise(e)
                         print(f"Error processing {signal_type}. Returning resampled signal.")
 
                 # Add updated timestamp column
-                # TODO: Fix timestamp generation. This sets the timestamp of the first sample to 0, which isn't necessarily what we want. 
-                timestamp = [1/sampling_rates[i]*j for j in range(temp.shape[0])]    
+                # TODO: Fix timestamp generation. This sets the timestamp of the first sample to 0, which isn't necessarily what we want.
+                timestamp = [1/sampling_rate*j for j in range(temp.shape[0])]    
                 temp.insert(0, "timestamp", timestamp)
                 temp.insert(1, "Phase", phase)
                 self._processed_data[subject].append(temp)
@@ -153,8 +153,8 @@ class SignalPreprocessor(BaseSignalPreprocessor):
                     data[subject].pop(i)
                 else:
                     sampling_rates.append(sample_rate)
-
-        sampling_rates.append(self._resample_rate)
+        if self._resample_rate > 0:
+            sampling_rates.append(self._resample_rate)
         return min(sampling_rates)
     
     def align_signal_start(self, data):

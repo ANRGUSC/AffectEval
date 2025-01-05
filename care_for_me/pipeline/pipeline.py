@@ -29,12 +29,14 @@ class Pipeline:
             self._nodes[i].add_prev(self._nodes[i+1])
 
     def run(self):
+        index = 0
         data = None
-        while self._nodes:
-            node = self._nodes.pop(0)
+        while index < len(self._nodes):
+            node = self._nodes[index]
             print(f"Running node {node.name}...")
             start = time.time()
             data = node.run(data)
             end = time.time()
             print(f"- Elapsed time: {round(end-start, 3)} s")
+            index += 1
         return data
