@@ -150,7 +150,7 @@ class FeatureExtractor(BaseFeatureExtractor):
                     for feat in extracted.keys():
                         feature = extracted[feat][i]
                         if len(feature) < count:
-                            feature += [np.NaN]*(count-len(feature))
+                            feature += [np.nan]*(count-len(feature))
             for feat in extracted.keys():
                 extracted[feat] = list(itertools.chain.from_iterable(extracted[feat]))
             extracted = pd.DataFrame({feature: pd.Series(extracted[feature]) for feature in extracted.keys()})
