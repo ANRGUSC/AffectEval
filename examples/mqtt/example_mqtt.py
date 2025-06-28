@@ -7,11 +7,11 @@ sys.path.append(module_path)
 
 import time
 
-from care_for_me.mqtt.signal_acquisition_client import SignalAcquisitionClient
-from care_for_me.mqtt.signal_preprocessor_client import SignalPreprocessorClient
-from care_for_me.mqtt.feature_extractor_client import FeatureExtractorClient
-from care_for_me.mqtt.feature_selector_client import FeatureSelectorClient
-from care_for_me.signals import Signals
+from affecteval.mqtt.signal_acquisition_client import SignalAcquisitionClient
+from affecteval.mqtt.signal_preprocessor_client import SignalPreprocessorClient
+from affecteval.mqtt.feature_extractor_client import FeatureExtractorClient
+from affecteval.mqtt.feature_selector_client import FeatureSelectorClient
+from affecteval.signals import Signals
 
 
 if __name__ == "__main__":

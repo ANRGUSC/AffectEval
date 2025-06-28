@@ -10,7 +10,7 @@ import math
 import numpy as np
 import os
 import pandas as pd
-import care_for_me.signals as signals
+import affecteval.signals as signals
 
 from pathlib import Path
 

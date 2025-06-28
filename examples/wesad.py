@@ -3,7 +3,7 @@ import math
 import numpy as np
 import os
 import pandas as pd
-import care_for_me.signals as signals
+import affecteval.signals as signals
 
 ROOT_DIR = "/Users/emilyzhou/Desktop/Research/CAREForMe/"
 DATA_DIR = os.path.join(ROOT_DIR, "data")

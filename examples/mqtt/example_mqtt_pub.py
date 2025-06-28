@@ -9,8 +9,8 @@ import paho.mqtt.client as mqtt
 import random
 import time
 
-from care_for_me.mqtt.signal_acquisition_client import SignalAcquisitionClient
-from care_for_me.signals import Signals
+from affecteval.mqtt.signal_acquisition_client import SignalAcquisitionClient
+from affecteval.signals import Signals
 
 
 def on_connect(self, client, userdata, flags, reason_code, properties):
