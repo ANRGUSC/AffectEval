@@ -1,3 +1,5 @@
+<a id="readme-top"></a>
+
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
@@ -54,7 +56,7 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
-AffectEval is a modular and customizable affcetive computing framework, aimed to facilitate the development of end-to-end affective computing pipelines from raw signals to model training and evaluation. It is Python-based and designed in an object-oriented paradigm, with separate classes for each component in the affective computing pipeline (see Fig. 1).
+AffectEval is a modular and customizable affective computing framework, aimed to facilitate the development of end-to-end affective computing pipelines from raw signals to model training and evaluation. It is Python-based and designed in an object-oriented paradigm, with separate classes for each component in the affective computing pipeline (see Fig. 1).
 
 AffectEval is designed with mental healthcare-focused affective computing applications in mind, and primarily supports time-series data at the moment. We plan to expand our scope to include other types of signals as well, such as text, video, and audio (see the [documentation](https://docs.google.com/document/d/11Ep4rF1QWcYwDGs62m5ssoAy_pgyZjqRRKB3uavTTqc/edit?tab=t.0#heading=h.22wedm27kxfq) for more details on what signals we currently support, and what methods are pre-implemented).
 
@@ -62,9 +64,10 @@ This repository is also a platform for community contributions. Please open pull
 
 <div align="center">
     <figure>
-        <img src="images/affective_computing_pipeline.png" alt="Affective Computing Pipeline" width="500" 
-        height="500">
-        <figcaption>The affective computing pipeline, originally described in [1].</figcaption>
+        <img src="images/affective_computing_pipeline.png" alt="Affective Computing Pipeline" 
+        width="400" 
+        height="411">
+        <h4>The affective computing pipeline, originally described in [1].</h4>
     </figure>
 </div> 
 
@@ -95,7 +98,18 @@ git clone https://github.com/ANRGUSC/AffectEval.git
 AffectEval was designed to reduce the amount of manual work required to implement affective computing pipelines. It is composed of Python classes that represent individual blocks, which can be modified and switched out independently if needed.
 
 ### Formatting your data to be compatible with AffectEval
- In order to take the workload off the user and enable automatic message-passing between components, we impose requirements on the format of input data.
+ In order to take the workload off the user and enable automatic message-passing between components, we impose requirements on the format of input data:
+
+ <div align="center">
+    <figure>
+        <img src="images/data_standard.png" alt="Data standard format" 
+        width="340" 
+        height="400"
+        >
+    </figure>
+</div> 
+
+Specifically, files should be in the Comma Separated Value file format (.csv), named with the subject ID, name of the experimental phase (e.g., Baseline, Stress, Recovery, etc.), and the signal type (e.g., ECG, EDA, EMG, etc.). Refer to the [documentation](https://docs.google.com/document/d/11Ep4rF1QWcYwDGs62m5ssoAy_pgyZjqRRKB3uavTTqc/edit?tab=t.0#heading=h.22wedm27kxfq) to see the exact abbreviations for each signal type. 
 
 ### Examples
 Example scripts and Jupyter Notebook files can be found in the [examples](https://github.com/ANRGUSC/AffectEval/tree/main/examples) directory. Specifically, we created end-to-end pipelines using AffectEval for the following:
@@ -105,7 +119,8 @@ Example scripts and Jupyter Notebook files can be found in the [examples](https:
 - Replication of binary stress detection experiments in Zhou et al. [4] ([link](https://github.com/ANRGUSC/AffectEval/blob/main/examples/zhou.ipynb))
 - Replication of binary and three-class stress classification [2] ([link](https://github.com/ANRGUSC/AffectEval/blob/main/examples/schmidt.ipynb))
 
-_For more examples, please refer to the [documentation](https://docs.google.com/document/d/11Ep4rF1QWcYwDGs62m5ssoAy_pgyZjqRRKB3uavTTqc/edit?tab=t.0#heading=h.22wedm27kxfq)_
+You will need to download the APD and/or WESAD datasets to run the corresponding scripts. WESAD is publicly available, while APD is available upon request.
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
